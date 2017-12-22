@@ -18,6 +18,12 @@ EOF
   exit
 }
 
+debug=
+if [ "x$1" = "x-d" ]; then
+  debug=echo
+  shift
+fi
+
 if [ "$#" -lt 3 ]; then
   Usage
 fi
@@ -33,9 +39,9 @@ ARGS="$@"
 
 # figure out the stack to run
 if [ -f "${directory}/${name}.yaml" ]; then
-  ARGS="$ARGS --template-body 'file://${directory}/${name}.yaml' "
+  ARGS="$ARGS --template-body file://${directory}/${name}.yaml "
 elif [ -f "${directory}/main.yaml" ]; then
-  ARGS="$ARGS --template-body 'file://${directory}/main.yaml' "
+  ARGS="$ARGS --template-body file://${directory}/main.yaml "
 else
   echo "No main template found in that directory"
   Usage
@@ -43,9 +49,9 @@ fi
 
 # figure out the parameter file to use
 if [ -f"${directory}/settings/${name}-parameters.json" ]; then
-  ARGS="$ARGS --parameters 'file://${directory}/${name}-parameters.json' "
+  ARGS="$ARGS --parameters file://${directory}/settings/${name}-parameters.json "
 elif [ -f "${directory}/settings/main-parameters.json" ]; then
-  ARGS="$ARGS --parameters 'file://${directory}/main-parameters.json' "
+  ARGS="$ARGS --parameters file://${directory}/settings/main-parameters.json "
 else
   echo "No parameters were found in the settings subdirectory"
   Usage
@@ -53,12 +59,12 @@ fi
 
 # figure out the tags file to use
 if [ -f "${directory}/settings/${name}-tags.json" ]; then
-  ARGS="$ARGS --parameters 'file://${directory}/${name}-tags.json' "
+  ARGS="$ARGS --parameters file://${directory}/settings/${name}-tags.json "
 elif [ -f "${directory}/settings/main-parameters.json" ]; then
-  ARGS="$ARGS --parameters 'file://${directory}/main-tags.json' "
+  ARGS="$ARGS --parameters file://${directory}/settings/main-tags.json "
 else
   echo "# Skipping tags since none were found"
 fi
 
-echo exec aws --profile "$profile" cloudformation create-stack --stack-name "$name" $ARGS
+$debug exec aws --profile "$profile" cloudformation create-stack --stack-name "$name" $ARGS
 exit
