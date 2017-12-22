@@ -1,0 +1,62 @@
+[
+        {
+            "ParameterValue": "10.57.254.0/24",
+            "ParameterKey": "FrontEndSubnet1ACIDR"
+        },
+        {
+            "ParameterValue": "chefdeveloper",
+            "ParameterKey": "KeyPairName"
+        },
+        {
+            "ParameterValue": "us-east-1c,us-east-1d",
+            "ParameterKey": "AvailabilityZones"
+        },
+        {
+            "ParameterValue": "2",
+            "ParameterKey": "NumberOfAZs"
+        },
+        {
+            "ParameterValue": "false",
+            "ParameterKey": "CreateVPNConnection"
+        },
+        {
+            "ParameterValue": "false",
+            "ParameterKey": "CreateVPNConnection2"
+        },
+        {
+            "ParameterKey": "BGPAsn",
+            "ParameterValue": "99111"
+        },
+        {
+            "ParameterValue": "false",
+            "ParameterKey": "UseNATGateway"
+        },
+        {
+            "ParameterValue": "default",
+            "ParameterKey": "VPCTenancy"
+        },
+        {
+            "ParameterValue": "t2.small",
+            "ParameterKey": "NATInstanceType"
+        },
+        {
+            "ParameterValue": "10.57.253.0/24",
+            "ParameterKey": "PublicSubnet2CIDR"
+        },
+        {
+            "ParameterValue": "10.57.252.0/22",
+            "ParameterKey": "VPCCIDR"
+        },
+        {
+            "ParameterValue": "10.57.255.0/24",
+            "ParameterKey": "FrontEndSubnet2ACIDR"
+        },
+        {
+            "ParameterValue": "10.57.252.0/24",
+            "ParameterKey": "PublicSubnet1CIDR"
+        },
+        {
+            "ParameterValue": "true",
+            "ParameterKey": "CreateFrontEndSubnets"
+        }
+]
