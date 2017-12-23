@@ -1,3 +1,16 @@
+Starting to look into using nested stack sets for some of this.  This means that the CF templates need to
+be stored in an S3 bucket.  This approach uses the approach similar to:
+
+https://github.com/awslabs/ecs-refarch-continuous-deployment
+
+This means that one of the first things we need to do is run the deploy script to create, configuration, and
+update the S3 bucket that contains the CF templates.  Once that is done one can run cloudformation referencing 
+the S3 bucket location.  This requires the following changes to the process:
+
+1. separate the settings files into separate trees from the templates.
+2. put the templates all in a single tree in bucket/templates/landscape/
+3. move the parameters into separate directories.
+
 These CloudFormation templates are used to provision and manage the BU IS&T Web2Cloud phase 1 project
 infrastructure.  Each subdirectory is a different cloudformation stack to be run independently due to
 lifecycle, number, or policy.  Some of them export values to be used by other stacks (for example, vpc).
