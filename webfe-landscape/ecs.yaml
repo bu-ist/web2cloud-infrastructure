@@ -1,0 +1,262 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Prefix:
+    Type: String
+    Default: "web2cloud-test"
+  Tag:
+    Type: String
+    Default: "9035b0c7"
+    #Default: "latest"
+  DockerImage:
+    Type: String
+    Default: "bufe-buedu"
+  PublicAlbAcmCertificate:
+    AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
+    Type: String
+    Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the ECS instances.
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Select a VPC that allows instances access to the Internet.
+  SubnetId:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Select at two subnets in your selected VPC (private).
+  ELBSubnetId:
+    Type: List<AWS::EC2::Subnet::Id>
+    Description: Select at two subnets in your selected VPC (public).
+  DesiredCapacity:
+    Type: Number
+    Default: '1'
+    Description: Number of instances to launch in your ECS cluster.
+  MaxSize:
+    Type: Number
+    Default: '1'
+    Description: Maximum number of instances that can be launched in your ECS cluster.
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
+      m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
+      c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
+      r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
+    ConstraintDescription: Please choose a valid instance type.
+Conditions:
+  SslCertificate:
+    !Not [!Equals [ '', !Ref PublicAlbAcmCertificate ] ]
+Mappings:
+  AWSRegionToAMI:
+    us-east-1:
+      #AMIID: ami-9eb4b1e5
+      # 2017.03 Image ID
+      #AMIID: ami-0e297018
+      AMIID: ami-fad25980
+    us-east-2:
+      AMIID: ami-446f3521
+    us-west-1:
+      AMIID: ami-9fadf8ff
+    us-west-2:
+      AMIID: ami-7abc111a
+    eu-west-1:
+      AMIID: ami-a1491ad2
+    eu-central-1:
+      AMIID: ami-54f5303b
+    ap-northeast-1:
+      AMIID: ami-9cd57ffd
+    ap-southeast-1:
+      AMIID: ami-a900a3ca
+    ap-southeast-2:
+      AMIID: ami-5781be34
+Resources:
+  ECSCluster:
+    Type: AWS::ECS::Cluster
+  CloudwatchLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Join ['-', [ECSLogGroup, !Ref 'AWS::StackName']]
+      RetentionInDays: 14
+  BUEDUALB:
+    Type: AWS::ElasticLoadBalancingV2::LoadBalancer
+    Properties:
+      Name: !Join [ "-", [ !Ref 'AWS::StackName', "buedu" ] ]
+      Scheme: internet-facing
+      LoadBalancerAttributes:
+      - Key: idle_timeout.timeout_seconds
+        Value: '30'
+      Subnets: !Ref 'ELBSubnetId'
+      SecurityGroups: 
+      - "Fn::ImportValue": !Sub "${Prefix}-iam-loadbalancer-sg"  
+  BUEDUListener443:
+    Condition: SslCertificate
+    Type : AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      Certificates:
+      - CertificateArn: !Ref PublicAlbAcmCertificate
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref ECSTG443
+      LoadBalancerArn: !Ref BUEDUALB
+      Port: 443
+      Protocol: HTTPS
+  BUEDUListener443Rule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    DependsOn: BUEDUListener80
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref 'ECSTG443'
+      Conditions:
+      - Field: path-pattern
+        Values: [/]
+      ListenerArn: !Ref 'BUEDUListener443'
+      Priority: 1
+  BUEDUListener80:
+    Type: AWS::ElasticLoadBalancingV2::Listener
+    Properties:
+      DefaultActions:
+      - Type: forward
+        TargetGroupArn: !Ref 'ECSTG'
+      LoadBalancerArn: !Ref 'BUEDUALB'
+      Port: '80'
+      Protocol: HTTP
+  BUEDUListener80Rule:
+    Type: AWS::ElasticLoadBalancingV2::ListenerRule
+    DependsOn: BUEDUListener80
+    Properties:
+      Actions:
+      - Type: forward
+        TargetGroupArn: !Ref 'ECSTG'
+      Conditions:
+      - Field: path-pattern
+        Values: [/]
+      ListenerArn: !Ref 'BUEDUListener80'
+      Priority: 1
+  ECSTG:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: BUEDUALB
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /server/healthcheck
+      HealthCheckProtocol: HTTP
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Name: !Join [ "-", [ !Ref 'AWS::StackName', "p80" ] ]
+      Port: 80
+      Protocol: HTTP
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref 'VpcId'
+  ECSTG443:
+    Type: AWS::ElasticLoadBalancingV2::TargetGroup
+    DependsOn: BUEDUALB
+    Properties:
+      HealthCheckIntervalSeconds: 10
+      HealthCheckPath: /server/healthcheck
+      HealthCheckProtocol: HTTPS
+      HealthCheckTimeoutSeconds: 5
+      HealthyThresholdCount: 2
+      Name: !Join [ "-", [ !Ref 'AWS::StackName', "p443" ] ]
+      Port: 443
+      Protocol: HTTPS
+      UnhealthyThresholdCount: 2
+      VpcId: !Ref 'VpcId'
+  ECSAutoScalingGroup:
+    Type: AWS::AutoScaling::AutoScalingGroup
+    Properties:
+      VPCZoneIdentifier: !Ref 'SubnetId'
+      LaunchConfigurationName: !Ref 'ContainerInstances'
+      MinSize: '1'
+      MaxSize: !Ref 'MaxSize'
+      DesiredCapacity: !Ref 'DesiredCapacity'
+      Tags:
+        - Key: Name
+          Value: !Sub "${AWS::StackName} - ECS Host"
+          PropagateAtLaunch: true
+        - Key: PatchLandscape
+          Value: "test"
+          PropagateAtLaunch: true
+    CreationPolicy:
+      ResourceSignal:
+        Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: 'true'
+  ContainerInstances:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Properties:
+      ImageId: !FindInMap [AWSRegionToAMI, !Ref 'AWS::Region', AMIID]
+      SecurityGroups: 
+      - "Fn::ImportValue":  !Sub "${Prefix}-iam-containers-sg" 
+      InstanceType: !Ref 'InstanceType'
+      IamInstanceProfile: 
+        "Fn::ImportValue":  !Sub "${Prefix}-iam-instance-profile" 
+      KeyName: !Ref 'KeyName'
+      UserData:
+        Fn::Base64: !Sub |
+          #!/bin/bash -xe
+          echo ECS_CLUSTER=${ECSCluster} >> /etc/ecs/ecs.config
+          yum install -y aws-cfn-bootstrap amazon-ssm-agent
+          start amazon-ssm-agent
+          /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+ # ServiceScalingTarget:
+ #   Type: AWS::ApplicationAutoScaling::ScalableTarget
+ #   Properties:
+ #     MaxCapacity: 2
+ #     MinCapacity: 1
+ #     ResourceId: !Join ['', [service/, !Ref 'ECSCluster', /, !GetAtt [service, Name]]]
+ #     RoleARN: 
+ #       "Fn::ImportValue": !Sub "${Prefix}-iam-autoscaling-role-arn" 
+ #     ScalableDimension: ecs:service:DesiredCount
+ #     ServiceNamespace: ecs
+ # ServiceScalingPolicy:
+ #   Type: AWS::ApplicationAutoScaling::ScalingPolicy
+ #   Properties:
+ #     PolicyName: AStepPolicy
+ #     PolicyType: StepScaling
+ #     ScalingTargetId: !Ref 'ServiceScalingTarget'
+ #     StepScalingPolicyConfiguration:
+ #       AdjustmentType: PercentChangeInCapacity
+ #       Cooldown: 60
+ #       MetricAggregationType: Average
+ #       StepAdjustments:
+ #       - MetricIntervalLowerBound: 0
+ #         ScalingAdjustment: 200
+  #ALB500sAlarmScaleUp:
+  #  Type: AWS::CloudWatch::Alarm
+  #  Properties:
+  #    EvaluationPeriods: '1'
+  #    Statistic: Average
+  #    Threshold: '10'
+  #    AlarmDescription: Alarm if our ALB generates too many HTTP 500s.
+  #    Period: '60'
+  #    AlarmActions: [!Ref 'ServiceScalingPolicy']
+  #    Namespace: AWS/ApplicationELB
+  #    Dimensions:
+  #    - Name: ECSService
+  #      Value: !Ref 'service'
+  #    ComparisonOperator: GreaterThanThreshold
+  #    MetricName: HTTPCode_ELB_5XX_Count
+Outputs:
+  ecscluster:
+    Value: !Ref 'ECSCluster'
+    Export:
+      Name: !Sub "${Prefix}-ecscluster-ref"
+  CloudwatchLogsGroup:
+    Value: !Ref 'CloudwatchLogsGroup'
+    Export:
+      Name: !Sub "${Prefix}-test-logs-group"
+  ECSTG443:
+    Value: !Ref ECSTG443
+    Export:
+      Name: !Sub "${Prefix}-targetgroup443-arn"
+  ECSTG:
+    Value: !Ref ECSTG
+    Export:
+      Name: !Sub "${Prefix}-targetgroup80-arn"
+  BUEDUALBDNS:
+    Value: !GetAtt [ BUEDUALB, DNSName]
+    Export:
+      Name: !Sub "${Prefix}-buedu-alb-dnsname"

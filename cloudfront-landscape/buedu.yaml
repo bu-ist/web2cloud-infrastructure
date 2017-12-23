@@ -1,0 +1,68 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Prefix:
+    Type: String
+    Default: "web2cloud-test"
+  PublicAlbAcmCertificate:
+    AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
+    Type: String
+    Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
+  VpcId:
+    Type: AWS::EC2::VPC::Id
+    Description: Select a VPC that allows instances access to the Internet.
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases:
+          - www-test.bu.edu
+        DefaultCacheBehavior:
+          TargetOriginId: buedu
+          ViewerProtocolPolicy: allow-all
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          ForwardedValues:
+            QueryString: true
+            Headers:
+              - Host
+              - Referer
+              - User-Agent
+              - X-Upstream
+            Cookies:
+              Forward: all
+        Comment: !Sub "${AWS::StackName}-buedu"
+        Enabled: true
+        Origins:
+          - DomainName: 
+              "Fn::ImportValue": !Sub "${Prefix}-buedu-alb-dnsname"
+            Id: buedu
+            CustomOriginConfig:
+              HTTPPort: '80'
+              HTTPSPort: '443'
+              OriginProtocolPolicy: match-viewer
+              OriginSSLProtocols:
+                - TLSv1
+                - TLSv1.1
+                - TLSv1.2
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn: !Ref PublicAlbAcmCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1
+Outputs:
+  CloudFrontARN:
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub "${Prefix}-buedu-cfn-arn"
+  #CloudFrontDNS:
+  #  Value: !GetAtt [ CloudFrontDistribution, DNSName ]
+  #  Export:
+  #    Name: !Sub "${Prefix}-buedu-cfn-dnsname"
