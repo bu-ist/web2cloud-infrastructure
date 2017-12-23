@@ -1,0 +1,321 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Prefix:
+    Description: >-
+      The prefix is used to link the various landscape specific stacks together.  It is used as part of the 
+      export and import values from other stacks.  Ideally we should combine all these stacks together but 
+      that would require having the ability to manage IAM with all stack executions and we want to keep 
+      InfoSec functions separate (at least for now).
+    Type: String
+    Default: "web2cloud-test"
+  VpcPrefix:
+    Description: >-
+      This prefix is used to link the project stuff to the VPC that it lives in.  It is used as part of the 
+      export and import values from other stacks.  
+    Type: String
+Resources:
+  ALBSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ALB Security Group
+      VpcId: 
+        "Fn::ImportValue": !Sub "${VpcPrefix}-VPCID"
+  ALBSecurityGroupHTTPSinbound:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref 'ALBSecurityGroup'
+      IpProtocol: tcp
+      FromPort: '443'
+      ToPort: '443'
+      CidrIp: 0.0.0.0/0
+  ALBSecurityGroupHTTPinbound:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref 'ALBSecurityGroup'
+      IpProtocol: tcp
+      FromPort: '80'
+      ToPort: '80'
+      CidrIp: 0.0.0.0/0
+  ECSSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: ECS Security Group
+      VpcId: 
+        "Fn::ImportValue": !Sub "${VpcPrefix}-VPCID"
+  ECSSecurityGroupSSHinboundVPN1:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref 'ECSSecurityGroup'
+      IpProtocol: tcp
+      FromPort: '22'
+      ToPort: '22'
+      CidrIp: 168.122.88.0/24
+  ECSSecurityGroupSSHinboundVPN2:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref 'ECSSecurityGroup'
+      IpProtocol: tcp
+      FromPort: '22'
+      ToPort: '22'
+      CidrIp: 168.122.75.0/24
+  ECSSecurityGroupSSHinboundRelay7:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref 'ECSSecurityGroup'
+      IpProtocol: tcp
+      FromPort: '22'
+      ToPort: '22'
+      CidrIp: 128.197.229.78/32
+  ECSSecurityGroupSSHinboundBastion:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref 'ECSSecurityGroup'
+      IpProtocol: tcp
+      FromPort: '22'
+      ToPort: '22'
+      CidrIp: 10.57.239.20/32
+  ECSSecurityGroupALBports:
+    Type: AWS::EC2::SecurityGroupIngress
+    Properties:
+      GroupId: !Ref 'ECSSecurityGroup'
+      IpProtocol: tcp
+      FromPort: '31000'
+      ToPort: '61000'
+      SourceSecurityGroupId: !Ref 'ALBSecurityGroup'
+  ECSServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ecs.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: ['elasticloadbalancing:DeregisterInstancesFromLoadBalancer', 'elasticloadbalancing:DeregisterTargets',
+              'elasticloadbalancing:Describe*', 'elasticloadbalancing:RegisterInstancesWithLoadBalancer',
+              'elasticloadbalancing:RegisterTargets', 'ec2:Describe*', 'ec2:AuthorizeSecurityGroupIngress']
+            Resource: '*'
+  EC2Role:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [ec2.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      ManagedPolicyArns: 
+        - "arn:aws:iam::aws:policy/service-role/AmazonEC2RoleforSSM"
+      Policies:
+      - PolicyName: ecs-service
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: ['ecs:CreateCluster', 'ecs:DeregisterContainerInstance', 'ecs:DiscoverPollEndpoint',
+              'ecs:Poll', 'ecs:RegisterContainerInstance', 'ecs:StartTelemetrySession',
+              'ecs:Submit*', 'logs:CreateLogStream', 'logs:PutLogEvents']
+            Resource: '*'
+          - Resource: '*'
+            Effect: Allow
+            Action: [ "ecr:GetAuthorizationToken", "ecr:BatchCheckLayerAvailability", 
+              "ecr:GetDownloadUrlForLayer", "ecr:GetRepositoryPolicy", "ecr:DescribeRepositories",
+              "ecr:ListImages", "ecr:DescribeImages", "ecr:BatchGetImage" ]
+  AutoscalingRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service: [application-autoscaling.amazonaws.com]
+          Action: ['sts:AssumeRole']
+      Path: /
+      Policies:
+      - PolicyName: service-autoscaling
+        PolicyDocument:
+          Statement:
+          - Effect: Allow
+            Action: ['application-autoscaling:*', 'cloudwatch:DescribeAlarms', 'cloudwatch:PutMetricAlarm',
+              'ecs:DescribeServices', 'ecs:UpdateService']
+            Resource: '*'
+  EC2InstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles: [ !Ref 'EC2Role' ]
+# #########
+# Now we do the roles for the development pipeline
+#
+# #########
+  CloudFormationExecutionRole:
+    Type: AWS::IAM::Role
+    DeletionPolicy: Retain
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "cloudformation.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - ecs:*
+                  - ecr:*
+                  - iam:*
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codebuild.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - ecr:GetAuthorizationToken
+              - Resource: 
+                  "Fn::ImportValue": !Sub "${Prefix}-artifact-bucket-resource"
+                Effect: Allow
+                Action:
+                  - s3:GetObject
+                  - s3:PutObject
+                  - s3:GetObjectVersion
+              - Resource: 
+                  "Fn::ImportValue": !Sub "${Prefix}-container-repository-arn"
+                Effect: Allow
+                Action:
+                  - ecr:GetDownloadUrlForLayer
+                  - ecr:BatchGetImage
+                  - ecr:BatchCheckLayerAvailability
+                  - ecr:PutImage
+                  - ecr:InitiateLayerUpload
+                  - ecr:UploadLayerPart
+                  - ecr:CompleteLayerUpload
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "codepipeline.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              - Resource:
+                  - "Fn::ImportValue": !Sub "${Prefix}-artifact-bucket-resource"
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+                  - cloudformation:*
+                  - iam:PassRole
+
+
+Outputs:
+  ALBSecurityGroup:
+    Description: "Security Group for load balancers"
+    Value: !Ref 'ALBSecurityGroup'
+    Export: 
+      Name: !Sub "${Prefix}-loadbalancer-sg"
+  ECSSecurityGroup:
+    Description: "Security Group for EC2 systems that are part of ECS clusters"
+    Value: !Ref 'ECSSecurityGroup'
+    Export: 
+      Name: !Sub "${Prefix}-containers-sg"
+  AutoscalingRole:
+    Description: "IAM Role for autoscaling containers"
+    Value: !Ref 'AutoscalingRole'
+    Export: 
+      Name: !Sub "${Prefix}-autoscaling-role"
+  AutoscalingRoleARN:
+    Description: "ARN for IAM Role for autoscaling containers"
+    Value: !GetAtt [ 'AutoscalingRole', 'Arn' ]
+    Export: 
+      Name: !Sub "${Prefix}-autoscaling-role-arn"
+  ECSServiceRole:
+    Description: "IAM Role for Container management/instance"
+    Value: !Ref 'ECSServiceRole'
+    Export: 
+      Name: !Sub "${Prefix}-container-role"
+  ECSServiceRoleARN:
+    Description: "ARN for IAM Role for Container management/instance"
+    Value: !GetAtt [ 'ECSServiceRole', 'Arn' ]
+    Export: 
+      Name: !Sub "${Prefix}-container-role-arn"
+  ECSInstanceProfile:
+    Description: "IAM Instance Profile with permissions for EC2 systems created as part of ECS cluster"
+    Value: !Ref 'EC2InstanceProfile'
+    Export: 
+      Name: !Sub "${Prefix}-instance-profile"
+  CloudFormationExecutionRole:
+    Value: !Ref 'CloudFormationExecutionRole'
+    Export: 
+      Name: !Sub "${Prefix}-cloudformation-execution-role"
+  CloudFormationExecutionRoleARN:
+    Value: !GetAtt CloudFormationExecutionRole.Arn
+    Export: 
+      Name: !Sub "${Prefix}-cloudformation-execution-role-arn"
+  CodeBuildServiceRole:
+    Value: !Ref 'CodeBuildServiceRole'
+    Export: 
+      Name: !Sub "${Prefix}-codebuild-service-role"
+  CodeBuildServiceRoleARN:
+    Value: !GetAtt CodeBuildServiceRole.Arn
+    Export: 
+      Name: !Sub "${Prefix}-codebuild-service-role-arn"
+  CodePipelineServiceRole:
+    Value: !Ref 'CodePipelineServiceRole'
+    Export: 
+      Name: !Sub "${Prefix}-codepipeline-service-role"
+  CodePipelineServiceRoleARN:
+    Value: !GetAtt CodePipelineServiceRole.Arn
+    Export: 
+      Name: !Sub "${Prefix}-codepipeline-service-role-arn"
+# Taken from the CodePipelineServiceRole
+#                  - "Fn::ImportValue": !Sub "${Prefix}-template-bucket-arn"
+#                  - "Fn::ImportValue": !Sub "${Prefix}-template-bucket-resource"

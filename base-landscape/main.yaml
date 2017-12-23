@@ -1,0 +1,73 @@
+Parameters:
+  Prefix:
+    Description: >-
+      The prefix is used to link the various landscape specific stacks together.  It is used as part of the 
+      export and import values from other stacks.  Ideally we should combine all these stacks together but 
+      that would require having the ability to manage IAM with all stack executions and we want to keep 
+      InfoSec functions separate (at least for now).
+    Type: String
+    Default: "web2cloud-test"
+
+Resources:
+  Repository:
+    Type: AWS::ECR::Repository
+    DeletionPolicy: Retain
+
+#  TemplateBucket:
+#    Type: AWS::S3::Bucket
+#    DeletionPolicy: Retain
+
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+#    Properties:
+#      Tags:
+#        - Key: Name
+#          Value: !Sub "${AWS::StackName}-artifact-s3"
+
+
+Outputs:
+  Repository:
+    Value: !Ref Repository
+    Export:
+      Name: !Sub "${Prefix}-container-repository"
+
+  RepositoryARN:
+    Value: !Sub "arn:aws:ecr:${AWS::Region}:${AWS::AccountId}:repository/${Repository}"
+    Export:
+      Name: !Sub "${Prefix}-container-repository-arn"
+
+  RepositoryURI:
+    Value: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}"
+    Export:
+      Name: !Sub "${Prefix}-container-repository-uri"
+
+  ArtifactBucketName:
+    Value: !Sub "${ArtifactBucket}"
+    Export:
+      Name: !Sub "${Prefix}-artifact-bucket-name"
+
+  ArtifactBucketARN:
+    Value: !Sub "arn:aws:s3:::${ArtifactBucket}"
+    Export:
+      Name: !Sub "${Prefix}-artifact-bucket-arn"
+
+  ArtifactBucketResource:
+    Value: !Sub "arn:aws:s3:::${ArtifactBucket}/*"
+    Export:
+      Name: !Sub "${Prefix}-artifact-bucket-resource"
+
+  #TemplateBucketName:
+  #  Value: !Sub "${TemplateBucket}"
+  #  Export:
+  #    Name: !Sub "${Prefix}-template-bucket-name"
+
+  #TemplateBucketARN:
+  #  Value: !Sub "arn:aws:s3:::${TemplateBucket}"
+  #  Export:
+  #    Name: !Sub "${Prefix}-template-bucket-arn"
+
+  #TemplateBucketResource:
+  #  Value: !Sub "arn:aws:s3:::${TemplateBucket}/*"
+  #  Export:
+  #    Name: !Sub "${Prefix}-template-bucket-resource"
