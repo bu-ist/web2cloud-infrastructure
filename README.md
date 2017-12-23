@@ -1,3 +1,50 @@
+These CloudFormation templates are used to provision and manage the BU IS&T Web2Cloud phase 1 project
+infrastructure.  Each subdirectory is a different cloudformation stack to be run independently due to
+lifecycle, number, or policy.  Some of them export values to be used by other stacks (for example, vpc).
+
+Each subdirectory has a settings subdirectory to store parameters and tags for specific instances of the 
+stack.  
+
+It consists of the following stacks:
+
+- account : account level settings irrespective of landscape (web2cloud-prod, and web2cloud-nonprod).
+- vpc : this stack builds the VPC and conditionally VPN connections back to campus (web2cloud-prod, web2cloud-nonprod, and sandbox).
+- base-landscape : this contains the common per landscape elements (basic ECR and S3 buckets) 
+  (buaws-webfe-base-syst, buaws-webfe-base-devl, buaws-webfe-base-test, buaws-webfe-base-qa, buaws-webfe-base-prod)
+- iam-landscape : this contains iam definitions per landscape elements
+  (buaws-webfe-iam-syst, buaws-webfe-iam-devl, buaws-webfe-iam-test, buaws-webfe-iam-qa, buaws-webfe-iam-prod)
+- 
+
+The basic deployment workflow for non-production and www-syst will be:
+
+1. Set up the account (right now this is a manual but well-defined process with local accounts (federation later).
+2. Run the vpc stack with the web2cloud-nonprod settings.
+3. Do the AWS side of the VPN connection (if not done by the vpc stack settings).
+4. Run the base-landscape stack with the buaws-webfe-base-syst settings.
+5. Run the iam-landscape stack with the buaws-webfe-iam-syst settings (by InfoSec).
+6. Run the ecs-landscape stack with the buaws-webfe-ecs-syst settings.
+7. Run the cloudfront-landscape stack with the buaws-webfe-cf-syst settings.
+
+
+This top-level directory contains some simple shell scripts that are mainly wrappers around the standard 
+CLI.  This was done for two reasons: 1) consistency of execution by multiple parties; and 2) as a learning
+aid for understanding the AWS cli options for CloudFormation.
+
+The current scripts are:
+
+- create-stack.sh - creates a stack from scratch (for initial build).
+- update-stack.sh - updates a stack immediately (mainly for initial development).
+- changeset-create.sh - creates a changeset on what would change if one updated the template and settings.
+- changeset-describe.sh - shows the contents of a changeset
+- validate-template.sh - validates that a CF template is in the correct format.
+
+Right we do not have any commands to delete a stack or delete/execute change sets.  This process can be done 
+through the console.
+
+----
+Old readme
+
+
 The CloudFormation templates in this directory set up www-test.bu.edu infrastructure - the test landscape for the 
 core bu.edu web service.  It is split into multiple templates for two reasons: 1) because they are various quick
 starts, examples, and reference architectures stiched together; and 2) I wanted to start separating by role
