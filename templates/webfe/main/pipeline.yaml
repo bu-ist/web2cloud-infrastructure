@@ -1,0 +1,154 @@
+# https://dzone.com/articles/automate-codecommit-and-codepipeline-in-aws-cloudf
+#
+Parameters:
+  Prefix:
+    Type: String
+    Default: "web2cloud-test"
+
+  # go to https://github.com/settings/tokens to generate a value for this entry
+  GitHubToken:
+    Type: String
+
+  GitHubRepo:
+    Type: String
+    Default: docker-bufe-buedu
+
+  GitHubBranch:
+    Type: String
+    Default: master
+
+  GitHubUser:
+    Type: String
+    Default: dsmk
+
+  TargetGroup:
+    Type: String
+    Default: skip
+
+  Cluster:
+    Type: String
+    Default: web2cloud-test-fe-ECSCluster-YXLOLWD4HO18
+
+  TemplateBucket:
+    Type: String
+    Default: arn:aws:s3:::web2cloud-deployment-base-templatebucket-ioiud8q84rff
+
+  ArtifactBucket:
+    Type: String
+    Default: arn:aws:s3:::web2cloud-deployment-base-artifactbucket-1divyw72d4pm1
+
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Location: 
+          "Fn::ImportValue": !Sub "${Prefix}-artifact-bucket-arn"
+        Type: "S3"
+      Source:
+        Location: !Sub ${ArtifactBucket}/source.zip
+        Type: "S3"
+        BuildSpec: |
+          version: 0.2
+          phases:
+            pre_build:
+              commands:
+                - $(aws ecr get-login)
+                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+            build:
+              commands:
+                - docker build --tag "${REPOSITORY_URI}:${TAG}" .
+            post_build:
+              commands:
+                - docker push "${REPOSITORY_URI}:${TAG}"
+                - printf '{"tag":"%s"}' $TAG > build.json
+          artifacts:
+            files: build.json
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        Image: "aws/codebuild/docker:1.12.1"
+        Type: "LINUX_CONTAINER"
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: REPOSITORY_URI
+            Value: 
+              "Fn::ImportValue": !Sub "${Prefix}-container-repository-uri"
+      Name: !Ref AWS::StackName
+      ServiceRole: 
+        "Fn::ImportValue": !Sub "${Prefix}-iam-codebuild-service-role"
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: 
+        "Fn::ImportValue": !Sub "${Prefix}-iam-codepipeline-service-role-arn"
+      ArtifactStore:
+        Type: S3
+        Location: 
+          "Fn::ImportValue": !Sub "${Prefix}-artifact-bucket-name"
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: App
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: App
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: Deploy
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ChangeSetName: Deploy
+                ActionMode: CREATE_UPDATE
+                StackName: !Sub "${AWS::StackName}-Service"
+                #Capabilities: CAPABILITY_NAMED_IAM
+                #TemplatePath: Template::templates/ecs-buedu-service.yaml
+                TemplatePath: App::aws/templates/ecs-buedu-service.yaml
+                #TemplatePath: Template::ecs-buedu.yaml
+                RoleArn: 
+                  "Fn::ImportValue": !Sub "${Prefix}-iam-cloudformation-execution-role-arn"
+                ParameterOverrides: !Sub |
+                  {
+                    "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
+                    "Prefix" : "${Prefix}",
+                    "DesiredCapacity" : "1"
+                  }
+              InputArtifacts:
+                - Name: App
+                - Name: BuildOutput
+              RunOrder: 1
+
+
+Outputs:
+  PipelineUrl:
+    Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}

@@ -1,0 +1,138 @@
+Description: >
+  This template illustrates how to use AWS CodeBuild and AWS CodePipeline to
+  achieve continuous deployment of source code from a GitHub repository via a
+  Docker container to an Amazon EC2 Container Service cluster.
+
+
+Parameters:
+  TemplateBucket:
+    Type: String
+    Description: "URL prefix for S3 bucket containing the nested templates"
+  TemplatePath:
+    Type: String
+    Default: "template"
+  Prefix:
+    Type: String
+    Default: "web2cloud-test"
+  VpcPrefix:
+    Type: String
+    Default: "web2cloud-prod"
+  Landscape:
+    Type: String
+    Default: "test"
+  Tag:
+    Type: String
+    Default: "9035b0c7"
+    #Default: "latest"
+  DockerImage:
+    Type: String
+    Default: "bufe-buedu"
+  PublicAlbAcmCertificate:
+    AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
+    Type: String
+    Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
+  KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: Name of an existing EC2 KeyPair to enable SSH access to the ECS instances.
+  DesiredCapacity:
+    Type: Number
+    Default: '1'
+    Description: Number of instances to launch in your ECS cluster.
+  MaxSize:
+    Type: Number
+    Default: '1'
+    Description: Maximum number of instances that can be launched in your ECS cluster.
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.micro
+    AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
+      m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
+      c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
+      r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
+    ConstraintDescription: Please choose a valid instance type.
+
+#Metadata:
+#  AWS::CloudFormation::Interface:
+#    ParameterLabels:
+#      GitHubUser:
+#        default: "User"
+#      GitHubRepo:
+#        default: "Repo"
+#      GitHubBranch:
+#        default: "Branch"
+#      GitHubToken:
+#        default: "Personal Access Token"
+#    ParameterGroups:
+#      - Label:
+#          default: GitHub Configuration
+#        Parameters:
+#          - GitHubRepo
+#          - GitHubBranch
+#          - GitHubUser
+#          - GitHubToken
+#
+
+Resources:
+  EcsStack:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/ecs.yaml"
+      Parameters:
+        Prefix: !Sub "${Prefix}"
+        VpcPrefix: !Sub "${VpcPrefix}"
+        Landscape: !Sub "${Landscape}"
+        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
+        KeyName: !Sub "${KeyName}"
+        DesiredCapacity: !Sub "${DesiredCapacity}"
+        MaxSize: !Sub "${MaxSize}"
+
+#  DeploymentPipeline:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment-v2-us-east-1/templates/deployment-pipeline.yaml
+#      Parameters:
+#        Cluster: !GetAtt Cluster.Outputs.ClusterName
+#        Service: !GetAtt Service.Outputs.ServiceName
+#        GitHubUser: !Ref GitHubUser
+#        GitHubToken: !Ref GitHubToken
+#        GitHubRepo: !Ref GitHubRepo
+#        GitHubBranch: !Ref GitHubBranch
+#
+#  LoadBalancer:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment-v2-us-east-1/templates/load-balancer.yaml
+#      Parameters:
+#        Subnets: !GetAtt VPC.Outputs.Subnets
+#        VpcId: !GetAtt VPC.Outputs.VpcId
+#
+#  VPC:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment-v2-us-east-1/templates/vpc.yaml
+#      Parameters:
+#        Name: !Ref AWS::StackName
+#        VpcCIDR: 10.215.0.0/16
+#        Subnet1CIDR: 10.215.10.0/24
+#        Subnet2CIDR: 10.215.20.0/24
+#
+#  Service:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment-v2-us-east-1/templates/service.yaml
+#      Parameters:
+#        Cluster: !GetAtt Cluster.Outputs.ClusterName
+#        TargetGroup: !GetAtt LoadBalancer.Outputs.TargetGroup
+#
+#
+#Outputs:
+#  ServiceUrl:
+#    Description: The sample service that is being continuously deployed.
+#    Value: !GetAtt LoadBalancer.Outputs.ServiceUrl
+#
+#  PipelineUrl:
+#    Description: The continuous deployment pipeline in the AWS Management Console.
+#    Value: !GetAtt DeploymentPipeline.Outputs.PipelineUrl

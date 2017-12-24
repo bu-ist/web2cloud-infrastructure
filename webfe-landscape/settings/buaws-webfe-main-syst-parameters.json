@@ -1,0 +1,38 @@
+[
+  {
+    "ParameterKey": "Prefix",
+    "ParameterValue": "buaws-webfe-syst"
+  },
+  {
+    "ParameterKey": "VpcPrefix",
+    "ParameterValue": "buaws-web2cloud-nonprod"
+  },
+  {
+    "ParameterKey": "Landscape",
+    "ParameterValue": "syst"
+  },
+  {
+    "ParameterKey": "TemplateBucket",
+    "ParameterValue": "https://s3.amazonaws.com/buaws-web2cloud-nonprod-us-east-1"
+  },
+  {
+    "ParameterKey": "TemplatePath",
+    "ParameterValue": "sandbox"
+  },
+  {
+    "ParameterKey": "PublicAlbAcmCertificate",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "chefdeveloper"
+  },
+  {
+    "ParameterKey": "DesiredCapacity",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "MaxSize",
+    "ParameterValue": "1"
+  }
+]
