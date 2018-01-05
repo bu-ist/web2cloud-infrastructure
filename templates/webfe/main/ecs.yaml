@@ -253,6 +253,13 @@ Outputs:
     Value: !Ref 'CloudwatchLogsGroup'
     Export:
       Name: !Sub "${Prefix}-test-logs-group"
+  IsSSL:
+    Value: !If
+      - SslCertificate
+      - 'true'
+      - 'false'
+    Export:
+      Name: !Sub "${Prefix}-is-targetgroup443"
   ECSTG443:
     Condition: SslCertificate
     Value: !Ref ECSTG443
