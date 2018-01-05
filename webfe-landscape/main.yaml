@@ -54,6 +54,23 @@ Parameters:
       r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
     ConstraintDescription: Please choose a valid instance type.
 
+  # go to https://github.com/settings/tokens to generate a value for this entry
+  GitHubToken:
+    Type: String
+
+  GitHubRepo:
+    Type: String
+    Default: docker-bufe-buedu
+
+  GitHubBranch:
+    Type: String
+    Default: master
+
+  GitHubUser:
+    Type: String
+    Default: dsmk
+
+
 #Metadata:
 #  AWS::CloudFormation::Interface:
 #    ParameterLabels:
@@ -89,45 +106,20 @@ Resources:
         DesiredCapacity: !Sub "${DesiredCapacity}"
         MaxSize: !Sub "${MaxSize}"
 
-#  DeploymentPipeline:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment-v2-us-east-1/templates/deployment-pipeline.yaml
-#      Parameters:
-#        Cluster: !GetAtt Cluster.Outputs.ClusterName
-#        Service: !GetAtt Service.Outputs.ServiceName
-#        GitHubUser: !Ref GitHubUser
-#        GitHubToken: !Ref GitHubToken
-#        GitHubRepo: !Ref GitHubRepo
-#        GitHubBranch: !Ref GitHubBranch
-#
-#  LoadBalancer:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment-v2-us-east-1/templates/load-balancer.yaml
-#      Parameters:
-#        Subnets: !GetAtt VPC.Outputs.Subnets
-#        VpcId: !GetAtt VPC.Outputs.VpcId
-#
-#  VPC:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment-v2-us-east-1/templates/vpc.yaml
-#      Parameters:
-#        Name: !Ref AWS::StackName
-#        VpcCIDR: 10.215.0.0/16
-#        Subnet1CIDR: 10.215.10.0/24
-#        Subnet2CIDR: 10.215.20.0/24
-#
-#  Service:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      TemplateURL: https://s3.amazonaws.com/ecs-refarch-continuous-deployment-v2-us-east-1/templates/service.yaml
-#      Parameters:
-#        Cluster: !GetAtt Cluster.Outputs.ClusterName
-#        TargetGroup: !GetAtt LoadBalancer.Outputs.TargetGroup
-#
-#
+  Pipeline:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/pipeline.yaml"
+      Parameters:
+        Prefix: !Sub "${Prefix}"
+        VpcPrefix: !Sub "${VpcPrefix}"
+        Landscape: !Sub "${Landscape}"
+        GitHubToken: !Sub "${GitHubToken}"
+        GitHubRepo: !Sub "${GitHubRepo}"
+        GitHubBranch: !Sub "${GitHubBranch}"
+        GitHubUser: !Sub "${GitHubUser}"
+        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
+
 #Outputs:
 #  ServiceUrl:
 #    Description: The sample service that is being continuously deployed.
