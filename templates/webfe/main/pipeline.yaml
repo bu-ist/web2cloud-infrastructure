@@ -35,9 +35,6 @@ Parameters:
     Type: String
     Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
 
-Conditions:
-  SslCertificate:
-    !Not [!Equals [ '', !Ref PublicAlbAcmCertificate ] ]
 Resources:
   CodeBuildProject:
     Type: AWS::CodeBuild::Project
@@ -145,7 +142,7 @@ Resources:
                   {
                     "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
                     "Prefix" : "${Prefix}",
-                    "IsSSL" : "${SslCertificate}",
+                    "PublicAlbAcmCertificate": "${PublicAlbAcmCertificate}",
                     "DesiredCapacity" : "1"
                   }
               InputArtifacts:
