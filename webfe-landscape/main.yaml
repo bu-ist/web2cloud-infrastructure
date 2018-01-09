@@ -120,6 +120,16 @@ Resources:
         GitHubUser: !Sub "${GitHubUser}"
         PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
 
+  CloudFront:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/${Landscape}/cloudfront.yaml"
+      Parameters:
+        Prefix: !Sub "${Prefix}"
+        Landscape: !Sub "${Landscape}"
+        RoutingOriginDNS: !GetAtt [ "EcsStack", "Outputs.BUEDUALBDNS" ]
+        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
+
 #Outputs:
 #  ServiceUrl:
 #    Description: The sample service that is being continuously deployed.
