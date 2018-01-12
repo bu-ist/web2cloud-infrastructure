@@ -250,9 +250,14 @@ Resources:
               - Resource: "*"
                 Effect: Allow
                 Action:
+                  - ecs:DescribeServices
+                  - ecs:DescribeTaskDefinition
+                  - ecs:DescribeTasks
+                  - ecs:ListTasks
+                  - ecs:RegisterTaskDefinition
+                  - ecs:UpdateService
                   - codebuild:StartBuild
                   - codebuild:BatchGetBuilds
-                  - cloudformation:*
                   - iam:PassRole
 
 
