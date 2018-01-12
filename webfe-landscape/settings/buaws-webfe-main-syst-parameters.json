@@ -21,11 +21,27 @@
   },
   {
     "ParameterKey": "PublicAlbAcmCertificate",
-    "ParameterValue": ""
+    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/bc063cb0-89fc-4dd8-93ed-703cc15b53bc"
   },
   {
     "ParameterKey": "KeyName",
     "ParameterValue": "chefdeveloper"
+  },
+  {
+    "ParameterKey": "GitHubRepo",
+    "ParameterValue": "docker-bufe-buedu"
+  },
+  {
+    "ParameterKey": "GitHubBranch",
+    "ParameterValue": "master"
+  },
+  {
+    "ParameterKey": "GitHubUser",
+    "ParameterValue": "dsmk"
+  },
+  {
+    "ParameterKey": "GitHubToken",
+    "ParameterValue": "206e1ff40ff002052f3bf7e62066af078308051c"
   },
   {
     "ParameterKey": "DesiredCapacity",
