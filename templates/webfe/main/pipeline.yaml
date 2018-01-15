@@ -65,11 +65,10 @@ Resources:
                 - IMAGEURI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "$IMAGEURI" .
+                - docker build --build-arg "landscape=$LANDSCAPE" --tag "$IMAGEURI" .
             post_build:
               commands:
                 - docker push "$IMAGEURI"
-                - printf '{"tag":"%s"}' $TAG > build.json
                 - printf '[{ "name": "bufe-buedu", "imageUri" : "%s" }]' "$IMAGEURI" > build.json 
           artifacts:
             files: build.json
