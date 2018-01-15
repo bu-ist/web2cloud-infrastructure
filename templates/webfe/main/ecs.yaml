@@ -69,6 +69,66 @@ Mappings:
     ap-southeast-2:
       AMIID: ami-5781be34
 Resources:
+  taskdefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Join ['', [!Ref 'AWS::StackName', -bufe]]
+      ContainerDefinitions:
+      - Name: bufe-buedu
+        Cpu: '10'
+        Essential: 'true'
+        # uncomment the following if we can make the root file system read-only
+        #ReadonlyRootFilesystem: 'true'
+        # The following is to avoid the catch-22: we don't have an image in our ECR until 
+        # the CodePipeline runs and the service has already failed.  We should investigate 
+        # having this be our web-router-base Docker image when we have it.
+        Image: amazon/amazon-ecs-sample
+        #Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}"
+        #Image: 
+        #  "Fn::Join": 
+        #    - ':' 
+        #    -
+        #      - "Fn::ImportValue": !Sub "${Prefix}-container-repository-uri"
+        #      - "latest"
+        Memory: '300'
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref 'CloudwatchLogsGroup'
+            awslogs-region: !Ref 'AWS::Region'
+            awslogs-stream-prefix: bufe-buedu
+        Environment:
+          - Name: LANDSCAPE
+            Value: !Ref 'Landscape'
+        PortMappings:
+          - ContainerPort: 80
+          - ContainerPort: 443
+  service443:
+    Condition: SslCertificate
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref 'ECSCluster'
+      DesiredCount: !Ref 'DesiredCapacity'
+      LoadBalancers:
+      - ContainerName: "bufe-buedu"
+        ContainerPort: '443'
+        TargetGroupArn: !Ref 'ECSTG443'
+      Role: 
+        "Fn::ImportValue": !Sub "${Prefix}-container-role"
+      TaskDefinition: !Ref 'taskdefinition'
+  service:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref 'ECSCluster'
+      DesiredCount: !Ref 'DesiredCapacity'
+      LoadBalancers:
+      - ContainerName: "bufe-buedu"
+        ContainerPort: '80'
+        TargetGroupArn: !Ref 'ECSTG'
+      Role:
+        "Fn::ImportValue": !Sub "${Prefix}-container-role"
+      TaskDefinition: !Ref 'taskdefinition'
+
   ECSCluster:
     Type: AWS::ECS::Cluster
   CloudwatchLogsGroup:
@@ -245,7 +305,7 @@ Resources:
   #    ComparisonOperator: GreaterThanThreshold
   #    MetricName: HTTPCode_ELB_5XX_Count
 Outputs:
-  ecscluster:
+  ECSCluster:
     Value: !Ref 'ECSCluster'
     Export:
       Name: !Sub "${Prefix}-ecscluster-ref"
@@ -253,6 +313,10 @@ Outputs:
     Value: !Ref 'CloudwatchLogsGroup'
     Export:
       Name: !Sub "${Prefix}-test-logs-group"
+  Port80Service:
+    Value: !Ref 'service'
+    Export:
+      Name: !Sub "${Prefix}-port80service-ref"
   IsSSL:
     Value: !If
       - SslCertificate

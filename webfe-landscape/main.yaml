@@ -119,16 +119,18 @@ Resources:
         GitHubBranch: !Sub "${GitHubBranch}"
         GitHubUser: !Sub "${GitHubUser}"
         PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
+        ECSCluster: !GetAtt [ "EcsStack", "Outputs.ECSCluster" ]
+        Port80Service: !GetAtt [ "EcsStack", "Outputs.Port80Service" ]
 
-  CloudFront:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/${Landscape}/cloudfront.yaml"
-      Parameters:
-        Prefix: !Sub "${Prefix}"
-        Landscape: !Sub "${Landscape}"
-        RoutingOriginDNS: !GetAtt [ "EcsStack", "Outputs.BUEDUALBDNS" ]
-        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
+#  CloudFront:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/${Landscape}/cloudfront.yaml"
+#      Parameters:
+#        Prefix: !Sub "${Prefix}"
+#        Landscape: !Sub "${Landscape}"
+#        RoutingOriginDNS: !GetAtt [ "EcsStack", "Outputs.BUEDUALBDNS" ]
+#        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
 
 #Outputs:
 #  ServiceUrl:

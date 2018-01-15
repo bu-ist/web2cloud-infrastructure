@@ -29,6 +29,12 @@ Parameters:
     Type: String
     Default: dsmk
 
+  ECSCluster:
+    Type: String
+
+  Port80Service:
+    Type: String
+
   PublicAlbAcmCertificate:
     #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
@@ -54,20 +60,23 @@ Resources:
           phases:
             pre_build:
               commands:
-                - $(aws ecr get-login)
+                - $(aws ecr get-login --no-include-email )
                 - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
+                - IMAGEURI="${REPOSITORY_URI}:${TAG}"
             build:
               commands:
-                - docker build --tag "${REPOSITORY_URI}:${TAG}" .
+                - docker build --tag "$IMAGEURI" .
             post_build:
               commands:
-                - docker push "${REPOSITORY_URI}:${TAG}"
+                - docker push "$IMAGEURI"
                 - printf '{"tag":"%s"}' $TAG > build.json
+                - printf '[{ "name": "bufe-buedu", "imageUri" : "%s" }]' "$IMAGEURI" > build.json 
           artifacts:
             files: build.json
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
-        Image: "aws/codebuild/docker:1.12.1"
+        Image: "aws/codebuild/docker:17.09.0"
+        #Image: "aws/codebuild/docker:1.12.1"
         Type: "LINUX_CONTAINER"
         EnvironmentVariables:
           - Name: AWS_DEFAULT_REGION
@@ -129,27 +138,14 @@ Resources:
                 Category: Deploy
                 Owner: AWS
                 Version: 1
-                Provider: CloudFormation
+                Provider: ECS
               Configuration:
-                ChangeSetName: Deploy
-                ActionMode: CREATE_UPDATE
-                StackName: !Sub "${AWS::StackName}-Service"
-                TemplatePath: !Sub "App::landscape/${Landscape}/service.yaml"
-                #TemplatePath: Template::ecs-buedu.yaml
-                RoleArn: 
-                  "Fn::ImportValue": !Sub "${Prefix}-cloudformation-execution-role-arn"
-                ParameterOverrides: !Sub |
-                  {
-                    "Tag" : { "Fn::GetParam" : [ "BuildOutput", "build.json", "tag" ] },
-                    "Prefix" : "${Prefix}",
-                    "PublicAlbAcmCertificate": "${PublicAlbAcmCertificate}",
-                    "DesiredCapacity" : "1"
-                  }
+                ClusterName: !Ref 'ECSCluster'
+                ServiceName: !Ref 'Port80Service'
+                FileName: build.json
               InputArtifacts:
-                - Name: App
                 - Name: BuildOutput
               RunOrder: 1
-
 
 Outputs:
   PipelineUrl:
