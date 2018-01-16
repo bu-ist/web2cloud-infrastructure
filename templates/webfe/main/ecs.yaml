@@ -45,6 +45,8 @@ Parameters:
 Conditions:
   SslCertificate:
     !Not [!Equals [ '', !Ref PublicAlbAcmCertificate ] ]
+  NotSslCertificate:
+    !Equals [ '', !Ref 'PublicAlbAcmCertificate' ]
 Mappings:
   AWSRegionToAMI:
     us-east-1:
@@ -103,8 +105,10 @@ Resources:
         PortMappings:
           - ContainerPort: 80
           - ContainerPort: 443
-  service443:
+
+  Port443Service:
     Condition: SslCertificate
+    DependsOn: ECSTG443
     Type: AWS::ECS::Service
     Properties:
       Cluster: !Ref 'ECSCluster'
@@ -116,8 +120,10 @@ Resources:
       Role: 
         "Fn::ImportValue": !Sub "${Prefix}-container-role"
       TaskDefinition: !Ref 'taskdefinition'
-  service:
+
+  Port80Service:
     Type: AWS::ECS::Service
+    DependsOn: ECSTG
     Properties:
       Cluster: !Ref 'ECSCluster'
       DesiredCount: !Ref 'DesiredCapacity'
@@ -314,9 +320,13 @@ Outputs:
     Export:
       Name: !Sub "${Prefix}-test-logs-group"
   Port80Service:
-    Value: !Ref 'service'
+    Value: !Ref 'Port80Service'
     Export:
       Name: !Sub "${Prefix}-port80service-ref"
+  Port443Service:
+    Value: !Ref 'Port443Service'
+    Export:
+      Name: !Sub "${Prefix}-port443service-ref"
   IsSSL:
     Value: !If
       - SslCertificate

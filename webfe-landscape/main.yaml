@@ -121,6 +121,7 @@ Resources:
         PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
         ECSCluster: !GetAtt [ "EcsStack", "Outputs.ECSCluster" ]
         Port80Service: !GetAtt [ "EcsStack", "Outputs.Port80Service" ]
+        Port443Service: !GetAtt [ "EcsStack", "Outputs.Port443Service" ]
 
 #  CloudFront:
 #    Type: AWS::CloudFormation::Stack

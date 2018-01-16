@@ -115,7 +115,7 @@ Resources:
               RunOrder: 1
         - Name: Deploy
           Actions:
-            - Name: Deploy
+            - Name: DeployPort80
               ActionTypeId:
                 Category: Deploy
                 Owner: AWS
@@ -124,6 +124,19 @@ Resources:
               Configuration:
                 ClusterName: !Ref 'ECSCluster'
                 ServiceName: !Ref 'Port80Service'
+                FileName: build.json
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+            - Name: DeployPort443
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: ECS
+              Configuration:
+                ClusterName: !Ref 'ECSCluster'
+                ServiceName: !Ref 'Port443Service'
                 FileName: build.json
               InputArtifacts:
                 - Name: BuildOutput
