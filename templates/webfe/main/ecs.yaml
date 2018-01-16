@@ -32,6 +32,10 @@ Parameters:
     Type: Number
     Default: '1'
     Description: Maximum number of instances that can be launched in your ECS cluster.
+  IdleTimeoutForLB:
+    Type: Number
+    Default: '3600'
+    Description: Maximum number of seconds a loadbalancer connection can be idle (high for Link batch apps)
   InstanceType:
     Description: EC2 instance type
     Type: String
@@ -71,70 +75,6 @@ Mappings:
     ap-southeast-2:
       AMIID: ami-5781be34
 Resources:
-  taskdefinition:
-    Type: AWS::ECS::TaskDefinition
-    Properties:
-      Family: !Join ['', [!Ref 'AWS::StackName', -bufe]]
-      ContainerDefinitions:
-      - Name: bufe-buedu
-        Cpu: '10'
-        Essential: 'true'
-        # uncomment the following if we can make the root file system read-only
-        #ReadonlyRootFilesystem: 'true'
-        # The following is to avoid the catch-22: we don't have an image in our ECR until 
-        # the CodePipeline runs and the service has already failed.  We should investigate 
-        # having this be our web-router-base Docker image when we have it.
-        Image: amazon/amazon-ecs-sample
-        #Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}"
-        #Image: 
-        #  "Fn::Join": 
-        #    - ':' 
-        #    -
-        #      - "Fn::ImportValue": !Sub "${Prefix}-container-repository-uri"
-        #      - "latest"
-        Memory: '300'
-        LogConfiguration:
-          LogDriver: awslogs
-          Options:
-            awslogs-group: !Ref 'CloudwatchLogsGroup'
-            awslogs-region: !Ref 'AWS::Region'
-            awslogs-stream-prefix: bufe-buedu
-        Environment:
-          - Name: LANDSCAPE
-            Value: !Ref 'Landscape'
-        PortMappings:
-          - ContainerPort: 80
-          - ContainerPort: 443
-
-  Port443Service:
-    Condition: SslCertificate
-    DependsOn: ECSTG443
-    Type: AWS::ECS::Service
-    Properties:
-      Cluster: !Ref 'ECSCluster'
-      DesiredCount: !Ref 'DesiredCapacity'
-      LoadBalancers:
-      - ContainerName: "bufe-buedu"
-        ContainerPort: '443'
-        TargetGroupArn: !Ref 'ECSTG443'
-      Role: 
-        "Fn::ImportValue": !Sub "${Prefix}-container-role"
-      TaskDefinition: !Ref 'taskdefinition'
-
-  Port80Service:
-    Type: AWS::ECS::Service
-    DependsOn: ECSTG
-    Properties:
-      Cluster: !Ref 'ECSCluster'
-      DesiredCount: !Ref 'DesiredCapacity'
-      LoadBalancers:
-      - ContainerName: "bufe-buedu"
-        ContainerPort: '80'
-        TargetGroupArn: !Ref 'ECSTG'
-      Role:
-        "Fn::ImportValue": !Sub "${Prefix}-container-role"
-      TaskDefinition: !Ref 'taskdefinition'
-
   ECSCluster:
     Type: AWS::ECS::Cluster
   CloudwatchLogsGroup:
@@ -142,20 +82,20 @@ Resources:
     Properties:
       LogGroupName: !Sub "ECSLogGroup-${AWS::StackName}"
       RetentionInDays: 14
-  BUEDUALB:
+  WebRouterALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub "${Landscape}-www-bu-edu"
+      Name: !Sub "${Landscape}-webrouter"
       Scheme: internet-facing
       LoadBalancerAttributes:
       - Key: idle_timeout.timeout_seconds
-        Value: '30'
+        Value: !Ref IdleTimeoutForLB
       Subnets: 
         - "Fn::ImportValue": !Sub "${VpcPrefix}-PublicSubnet1ID"
         - "Fn::ImportValue": !Sub "${VpcPrefix}-PublicSubnet2ID"
       SecurityGroups: 
       - "Fn::ImportValue": !Sub "${Prefix}-loadbalancer-sg"  
-  BUEDUListener443:
+  WebRouterListener443:
     Condition: SslCertificate
     Type : AWS::ElasticLoadBalancingV2::Listener
     Properties:
@@ -163,70 +103,70 @@ Resources:
       - CertificateArn: !Ref PublicAlbAcmCertificate
       DefaultActions:
       - Type: forward
-        TargetGroupArn: !Ref ECSTG443
-      LoadBalancerArn: !Ref BUEDUALB
+        TargetGroupArn: !Ref WebRouterTG443
+      LoadBalancerArn: !Ref WebRouterALB
       Port: 443
       Protocol: HTTPS
-  BUEDUListener443Rule:
+  WebRouterListener443Rule:
     Condition: SslCertificate
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    DependsOn: BUEDUListener80
+    DependsOn: WebRouterListener80
     Properties:
       Actions:
       - Type: forward
-        TargetGroupArn: !Ref 'ECSTG443'
+        TargetGroupArn: !Ref 'WebRouterTG443'
       Conditions:
       - Field: path-pattern
         Values: [/]
-      ListenerArn: !Ref 'BUEDUListener443'
+      ListenerArn: !Ref 'WebRouterListener443'
       Priority: 1
-  BUEDUListener80:
+  WebRouterListener80:
     Type: AWS::ElasticLoadBalancingV2::Listener
     Properties:
       DefaultActions:
       - Type: forward
-        TargetGroupArn: !Ref 'ECSTG'
-      LoadBalancerArn: !Ref 'BUEDUALB'
+        TargetGroupArn: !Ref 'WebRouterTG80'
+      LoadBalancerArn: !Ref 'WebRouterALB'
       Port: '80'
       Protocol: HTTP
-  BUEDUListener80Rule:
+  WebRouterListener80Rule:
     Type: AWS::ElasticLoadBalancingV2::ListenerRule
-    DependsOn: BUEDUListener80
+    DependsOn: WebRouterListener80
     Properties:
       Actions:
       - Type: forward
-        TargetGroupArn: !Ref 'ECSTG'
+        TargetGroupArn: !Ref 'WebRouterTG80'
       Conditions:
       - Field: path-pattern
         Values: [/]
-      ListenerArn: !Ref 'BUEDUListener80'
+      ListenerArn: !Ref 'WebRouterListener80'
       Priority: 1
-  ECSTG:
+  WebRouterTG80:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    DependsOn: BUEDUALB
+    DependsOn: WebRouterALB
     Properties:
       HealthCheckIntervalSeconds: 10
       HealthCheckPath: /server/healthcheck
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub "${Landscape}-www-bu-edu-p80"
+      Name: !Sub "${Landscape}-webrouter-p80"
       Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 2
       VpcId:
         "Fn::ImportValue": !Sub "${VpcPrefix}-VPCID"
-  ECSTG443:
+  WebRouterTG443:
     Condition: SslCertificate
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
-    DependsOn: BUEDUALB
+    DependsOn: WebRouterALB
     Properties:
       HealthCheckIntervalSeconds: 10
       HealthCheckPath: /server/healthcheck
       HealthCheckProtocol: HTTPS
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub "${Landscape}-www-bu-edu-p443"
+      Name: !Sub "${Landscape}-webrouter-p443"
       Port: 443
       Protocol: HTTPS
       UnhealthyThresholdCount: 2
@@ -319,14 +259,6 @@ Outputs:
     Value: !Ref 'CloudwatchLogsGroup'
     Export:
       Name: !Sub "${Prefix}-test-logs-group"
-  Port80Service:
-    Value: !Ref 'Port80Service'
-    Export:
-      Name: !Sub "${Prefix}-port80service-ref"
-  Port443Service:
-    Value: !Ref 'Port443Service'
-    Export:
-      Name: !Sub "${Prefix}-port443service-ref"
   IsSSL:
     Value: !If
       - SslCertificate
@@ -334,16 +266,16 @@ Outputs:
       - 'false'
     Export:
       Name: !Sub "${Prefix}-is-targetgroup443"
-  ECSTG443:
+  Port443TargetGroup:
     Condition: SslCertificate
-    Value: !Ref ECSTG443
+    Value: !Ref WebRouterTG443
     Export:
       Name: !Sub "${Prefix}-targetgroup443-arn"
-  ECSTG:
-    Value: !Ref ECSTG
+  Port80TargetGroup:
+    Value: !Ref WebRouterTG80
     Export:
       Name: !Sub "${Prefix}-targetgroup80-arn"
-  BUEDUALBDNS:
-    Value: !GetAtt [ BUEDUALB, DNSName]
+  WebRouterALBDNS:
+    Value: !GetAtt [ WebRouterALB, DNSName]
     Export:
       Name: !Sub "${Prefix}-buedu-alb-dnsname"

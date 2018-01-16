@@ -1,0 +1,155 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Prefix:
+    Type: String
+    Default: "web2cloud-test"
+  Landscape:
+    Type: String
+    Default: "test"
+  Tag:
+    Type: String
+    Default: "9035b0c7"
+    #Default: "latest"
+  CloudwatchLogsGroup:
+    Type: String
+    Description: Reference to logs group for ECS cluster apps
+  ECSCluster:
+    Type: String
+    Description: Reference to ECS cluster
+  Port80TargetGroup:
+    Type: String
+    Description: Reference to target group for port 80
+  Port443TargetGroup:
+    Type: String
+    Description: Reference to target group for port 443
+  DockerImage:
+    Type: String
+    Default: "amazon/amazon-ecs-sample"
+  PublicAlbAcmCertificate:
+    #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
+    Type: String
+    Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
+  DesiredCapacity:
+    Type: Number
+    Default: '1'
+    Description: Number of instances to launch in your ECS cluster.
+  MaxSize:
+    Type: Number
+    Default: '1'
+    Description: Maximum number of instances that can be launched in your ECS cluster.
+Conditions:
+  SslCertificate:
+    !Not [!Equals [ '', !Ref PublicAlbAcmCertificate ] ]
+  NotSslCertificate:
+    !Equals [ '', !Ref 'PublicAlbAcmCertificate' ]
+Resources:
+  taskdefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Join ['', [!Ref 'AWS::StackName', -bufe]]
+      ContainerDefinitions:
+      - Name: "bu-webrouter"
+        Cpu: '10'
+        Essential: 'true'
+        # uncomment the following if we can make the root file system read-only
+        #ReadonlyRootFilesystem: 'true'
+        # The following is to avoid the catch-22: we don't have an image in our ECR until 
+        # the CodePipeline runs and the service has already failed.  We should investigate 
+        # having this be our web-router-base Docker image when we have it.
+        Image: amazon/amazon-ecs-sample
+        #Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}"
+        #Image: 
+        #  "Fn::Join": 
+        #    - ':' 
+        #    -
+        #      - "Fn::ImportValue": !Sub "${Prefix}-container-repository-uri"
+        #      - "latest"
+        Memory: '300'
+        LogConfiguration:
+          LogDriver: awslogs
+          Options:
+            awslogs-group: !Ref 'CloudwatchLogsGroup'
+            awslogs-region: !Ref 'AWS::Region'
+            awslogs-stream-prefix: bufe-buedu
+        Environment:
+          - Name: LANDSCAPE
+            Value: !Ref 'Landscape'
+        PortMappings:
+          - ContainerPort: 80
+          - ContainerPort: 443
+
+  Port443Service:
+    Condition: SslCertificate
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref 'ECSCluster'
+      DesiredCount: !Ref 'DesiredCapacity'
+      LoadBalancers:
+      - ContainerName: "bu-webrouter"
+        ContainerPort: '443'
+        TargetGroupArn: !Ref 'Port443TargetGroup'
+      Role: 
+        "Fn::ImportValue": !Sub "${Prefix}-container-role"
+      TaskDefinition: !Ref 'taskdefinition'
+
+  Port80Service:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref 'ECSCluster'
+      DesiredCount: !Ref 'DesiredCapacity'
+      LoadBalancers:
+      - ContainerName: "bu-webrouter"
+        ContainerPort: '80'
+        TargetGroupArn: !Ref 'Port80TargetGroup'
+      Role:
+        "Fn::ImportValue": !Sub "${Prefix}-container-role"
+      TaskDefinition: !Ref 'taskdefinition'
+
+ # ServiceScalingTarget:
+ #   Type: AWS::ApplicationAutoScaling::ScalableTarget
+ #   Properties:
+ #     MaxCapacity: 2
+ #     MinCapacity: 1
+ #     ResourceId: !Join ['', [service/, !Ref 'ECSCluster', /, !GetAtt [service, Name]]]
+ #     RoleARN: 
+ #       "Fn::ImportValue": !Sub "${Prefix}-autoscaling-role-arn" 
+ #     ScalableDimension: ecs:service:DesiredCount
+ #     ServiceNamespace: ecs
+ # ServiceScalingPolicy:
+ #   Type: AWS::ApplicationAutoScaling::ScalingPolicy
+ #   Properties:
+ #     PolicyName: AStepPolicy
+ #     PolicyType: StepScaling
+ #     ScalingTargetId: !Ref 'ServiceScalingTarget'
+ #     StepScalingPolicyConfiguration:
+ #       AdjustmentType: PercentChangeInCapacity
+ #       Cooldown: 60
+ #       MetricAggregationType: Average
+ #       StepAdjustments:
+ #       - MetricIntervalLowerBound: 0
+ #         ScalingAdjustment: 200
+  #ALB500sAlarmScaleUp:
+  #  Type: AWS::CloudWatch::Alarm
+  #  Properties:
+  #    EvaluationPeriods: '1'
+  #    Statistic: Average
+  #    Threshold: '10'
+  #    AlarmDescription: Alarm if our ALB generates too many HTTP 500s.
+  #    Period: '60'
+  #    AlarmActions: [!Ref 'ServiceScalingPolicy']
+  #    Namespace: AWS/ApplicationELB
+  #    Dimensions:
+  #    - Name: ECSService
+  #      Value: !Ref 'service'
+  #    ComparisonOperator: GreaterThanThreshold
+  #    MetricName: HTTPCode_ELB_5XX_Count
+Outputs:
+  Port80Service:
+    Value: !Ref 'Port80Service'
+    Export:
+      Name: !Sub "${Prefix}-port80service-ref"
+  Port443Service:
+    Value: !Ref 'Port443Service'
+    Export:
+      Name: !Sub "${Prefix}-port443service-ref"
