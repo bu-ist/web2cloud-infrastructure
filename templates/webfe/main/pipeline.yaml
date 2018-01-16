@@ -55,23 +55,6 @@ Resources:
           - - "Fn::ImportValue": !Sub "${Prefix}-artifact-bucket-arn"
             - "/source.zip"
         Type: "S3"
-        BuildSpec: |
-          version: 0.2
-          phases:
-            pre_build:
-              commands:
-                - $(aws ecr get-login --no-include-email )
-                - TAG="$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | head -c 8)"
-                - IMAGEURI="${REPOSITORY_URI}:${TAG}"
-            build:
-              commands:
-                - docker build --build-arg "landscape=$LANDSCAPE" --tag "$IMAGEURI" .
-            post_build:
-              commands:
-                - docker push "$IMAGEURI"
-                - printf '[{ "name": "bufe-buedu", "imageUri" : "%s" }]' "$IMAGEURI" > build.json 
-          artifacts:
-            files: build.json
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
         Image: "aws/codebuild/docker:17.09.0"
