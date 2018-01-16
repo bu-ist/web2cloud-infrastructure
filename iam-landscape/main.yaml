@@ -154,31 +154,6 @@ Resources:
 # Now we do the roles for the development pipeline
 #
 # #########
-  CloudFormationExecutionRole:
-    Type: AWS::IAM::Role
-    DeletionPolicy: Retain
-    Properties:
-      Path: /
-      AssumeRolePolicyDocument: |
-        {
-            "Statement": [{
-                "Effect": "Allow",
-                "Principal": { "Service": [ "cloudformation.amazonaws.com" ]},
-                "Action": [ "sts:AssumeRole" ]
-            }]
-        }
-      Policies:
-        - PolicyName: root
-          PolicyDocument:
-            Version: 2012-10-17
-            Statement:
-              - Resource: "*"
-                Effect: Allow
-                Action:
-                  - ecs:*
-                  - ecr:*
-                  - iam:*
-
   CodeBuildServiceRole:
     Type: AWS::IAM::Role
     Properties:
@@ -297,14 +272,6 @@ Outputs:
     Value: !Ref 'EC2InstanceProfile'
     Export: 
       Name: !Sub "${Prefix}-instance-profile"
-  CloudFormationExecutionRole:
-    Value: !Ref 'CloudFormationExecutionRole'
-    Export: 
-      Name: !Sub "${Prefix}-cloudformation-execution-role"
-  CloudFormationExecutionRoleARN:
-    Value: !GetAtt CloudFormationExecutionRole.Arn
-    Export: 
-      Name: !Sub "${Prefix}-cloudformation-execution-role-arn"
   CodeBuildServiceRole:
     Value: !Ref 'CodeBuildServiceRole'
     Export: 

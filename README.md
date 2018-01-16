@@ -54,6 +54,10 @@ The current scripts are:
 Right we do not have any commands to delete a stack or delete/execute change sets.  This process can be done 
 through the console.
 
+Things to be aware of:
+1. deleting IAM roles from iam-landscape will not delete them from the system, just from being tracked by CF
+2. one needs to add the --capabilities CAPABILITY_IAM to the end of the create/update stack options.  For example,  ./update-stack.sh w2c-nonprod iam-landscape buaws-webfe-iam-syst --capabilities CAPABILITY_IAM
+
 ----
 Old readme
 
