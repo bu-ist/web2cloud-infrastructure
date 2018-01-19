@@ -291,6 +291,14 @@ Parameters:
     Default: default
     Description: The allowed tenancy of instances launched into the VPC
     Type: String
+  TrafficType:
+    AllowedValues:
+      - REJECT
+      - ACCEPT    
+      - ALL
+    Default: ALL 
+    Description:  The actual filter for VPC Flow Logs - Revisit TrafficType for PROD (ALL,REJECT,ACCEPT)
+    Type: String
 Mappings:
   AWSAMIRegionMap:
     AMI:
@@ -362,6 +370,44 @@ Conditions:
           - !Ref 'AWS::Region'
           - cn-north-1
 Resources:
+  FlowLogRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument: |
+        {   
+            "Statement": [{
+                "Effect": "Allow",
+                "Principal": { "Service": [ "vpc-flow-logs.amazonaws.com" ]},
+                "Action": [ "sts:AssumeRole" ]
+            }]
+        }
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+             - Resource: "*"
+               Effect: Allow
+               Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:DescribeLogGroups
+                  - logs:DescribeLogStreams
+  FlowLog:
+    Type: 'AWS::EC2::FlowLog'
+    Properties:
+      DeliverLogsPermissionArn: !GetAtt 'FlowLogRole.Arn'
+      LogGroupName: !Ref CloudwatchFlowLogsGroup
+      ResourceId: !Ref VPC
+      ResourceType: 'VPC'
+      TrafficType: !Ref TrafficType 
+  CloudwatchFlowLogsGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "${AWS::StackName}-flowlogs"
+      RetentionInDays: 7
   DHCPOptions:
     Type: 'AWS::EC2::DHCPOptions'
     Properties:
