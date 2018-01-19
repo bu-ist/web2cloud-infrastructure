@@ -24,7 +24,7 @@ Resources:
         Aliases:
           - www-syst.bu.edu
         DefaultCacheBehavior:
-          TargetOriginId: buedu
+          TargetOriginId: router
           ViewerProtocolPolicy: allow-all
           AllowedMethods:
             - DELETE
@@ -50,13 +50,13 @@ Resources:
             Id: router
             CustomOriginConfig:
               HTTPPort: '80'
-              OriginProtocolPolicy: http-only
-              #HTTPSPort: '443'
-              #OriginProtocolPolicy: match-viewer
-              #OriginSSLProtocols:
-              #  - TLSv1
-              #  - TLSv1.1
-              #  - TLSv1.2
+              #OriginProtocolPolicy: http-only
+              HTTPSPort: '443'
+              OriginProtocolPolicy: match-viewer
+              OriginSSLProtocols:
+                - TLSv1
+                - TLSv1.1
+                - TLSv1.2
         PriceClass: PriceClass_100
         ViewerCertificate:
           AcmCertificateArn: !Ref PublicAlbAcmCertificate

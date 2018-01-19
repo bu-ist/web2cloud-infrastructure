@@ -136,15 +136,15 @@ Resources:
         Port80Service: !GetAtt [ "WebRouterService", "Outputs.Port80Service" ]
         Port443Service: !GetAtt [ "WebRouterService", "Outputs.Port443Service" ]
 
-#  CloudFront:
-#    Type: AWS::CloudFormation::Stack
-#    Properties:
-#      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/${Landscape}/cloudfront.yaml"
-#      Parameters:
-#        Prefix: !Sub "${Prefix}"
-#        Landscape: !Sub "${Landscape}"
-#        RoutingOriginDNS: !GetAtt [ "EcsStack", "Outputs.WebRouterALBDNS" ]
-#        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
+  CloudFront:
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/${Landscape}/cloudfront.yaml"
+      Parameters:
+        Prefix: !Sub "${Prefix}"
+        Landscape: !Sub "${Landscape}"
+        RoutingOriginDNS: !GetAtt [ "EcsStack", "Outputs.WebRouterALBDNS" ]
+        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
 
 #Outputs:
 #  ServiceUrl:
