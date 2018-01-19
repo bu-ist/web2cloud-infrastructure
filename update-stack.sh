@@ -59,9 +59,9 @@ fi
 
 # figure out the tags file to use
 if [ -f "${directory}/settings/${name}-tags.json" ]; then
-  ARGS="$ARGS --parameters file://${directory}/settings/${name}-tags.json "
+  ARGS="$ARGS --tags file://${directory}/settings/${name}-tags.json "
 elif [ -f "${directory}/settings/main-parameters.json" ]; then
-  ARGS="$ARGS --parameters file://${directory}/settings/main-tags.json "
+  ARGS="$ARGS --tags file://${directory}/settings/main-tags.json "
 else
   echo "# Skipping tags since none were found"
 fi
