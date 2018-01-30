@@ -106,44 +106,59 @@ Resources:
         "Fn::ImportValue": !Sub "${Prefix}-container-role"
       TaskDefinition: !Ref 'taskdefinition'
 
- # ServiceScalingTarget:
- #   Type: AWS::ApplicationAutoScaling::ScalableTarget
- #   Properties:
- #     MaxCapacity: 2
- #     MinCapacity: 1
- #     ResourceId: !Join ['', [service/, !Ref 'ECSCluster', /, !GetAtt [service, Name]]]
- #     RoleARN: 
- #       "Fn::ImportValue": !Sub "${Prefix}-autoscaling-role-arn" 
- #     ScalableDimension: ecs:service:DesiredCount
- #     ServiceNamespace: ecs
- # ServiceScalingPolicy:
- #   Type: AWS::ApplicationAutoScaling::ScalingPolicy
- #   Properties:
- #     PolicyName: AStepPolicy
- #     PolicyType: StepScaling
- #     ScalingTargetId: !Ref 'ServiceScalingTarget'
- #     StepScalingPolicyConfiguration:
- #       AdjustmentType: PercentChangeInCapacity
- #       Cooldown: 60
- #       MetricAggregationType: Average
- #       StepAdjustments:
- #       - MetricIntervalLowerBound: 0
- #         ScalingAdjustment: 200
-  #ALB500sAlarmScaleUp:
-  #  Type: AWS::CloudWatch::Alarm
-  #  Properties:
-  #    EvaluationPeriods: '1'
-  #    Statistic: Average
-  #    Threshold: '10'
-  #    AlarmDescription: Alarm if our ALB generates too many HTTP 500s.
-  #    Period: '60'
-  #    AlarmActions: [!Ref 'ServiceScalingPolicy']
-  #    Namespace: AWS/ApplicationELB
-  #    Dimensions:
-  #    - Name: ECSService
-  #      Value: !Ref 'service'
-  #    ComparisonOperator: GreaterThanThreshold
-  #    MetricName: HTTPCode_ELB_5XX_Count
+  Port80ServiceScalingTarget:
+    Type: AWS::ApplicationAutoScaling::ScalableTarget
+    Properties:
+      MaxCapacity: 2
+      MinCapacity: 1
+      #ResourceId: !Ref "Port80Service" 
+      ResourceId: !Join
+        - /
+        - - service
+          - !Ref "ECSCluster"
+          - !GetAtt "Port80Service.Name"
+      RoleARN: 
+        "Fn::ImportValue": !Sub "${Prefix}-autoscaling-role-arn" 
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+
+  Port80ServiceScalingPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub "${AWS::StackName}-port80-scaling-policy"
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref 'Port80ServiceScalingTarget'
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 60
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: 2
+        - MetricIntervalUpperBound: 0
+          ScalingAdjustment: "-1"
+
+
+  Port80ScalingCPUAlarm:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      AlarmDescription: Alarm if our ALB generates too many HTTP 500s.
+      AlarmActions: [!Ref 'Port80ServiceScalingPolicy']
+      ComparisonOperator: GreaterThanOrEqualToThreshold
+      Dimensions:
+      - Name: ServiceName
+        Value: !Ref 'Port80Service'
+      - Name: ClusterName
+        Value: !Ref "ECSCluster"
+      EvaluationPeriods: '1'
+      MetricName: !Sub "${AWS::StackName}-port80-cpu-alarm"
+      Namespace: AWS/ECS
+      Period: '300'
+      Statistic: Average
+      Threshold: '80'
+
 Outputs:
   Port80Service:
     Value: !Ref 'Port80Service'

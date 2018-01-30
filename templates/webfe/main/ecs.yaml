@@ -46,6 +46,14 @@ Parameters:
       c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
       r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
     ConstraintDescription: Please choose a valid instance type.
+  ScaleUpPercent:
+    Type: Number
+    Default: '50'
+    Description: Percent threshold above which we add more ECS nodes
+  ScaleDownPercent:
+    Type: Number
+    Default: '20'
+    Description: Percent threshold above which we add more ECS nodes
 Conditions:
   SslCertificate:
     !Not [!Equals [ '', !Ref PublicAlbAcmCertificate ] ]
@@ -172,6 +180,7 @@ Resources:
       UnhealthyThresholdCount: 2
       VpcId: 
         "Fn::ImportValue": !Sub "${VpcPrefix}-VPCID"
+
   ECSAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
@@ -195,6 +204,7 @@ Resources:
     UpdatePolicy:
       AutoScalingReplacingUpdate:
         WillReplace: 'true'
+
   ContainerInstances:
     Type: AWS::AutoScaling::LaunchConfiguration
     Properties:
@@ -212,6 +222,64 @@ Resources:
           yum install -y aws-cfn-bootstrap amazon-ssm-agent
           start amazon-ssm-agent
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
+
+  MemoryScaleUpPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: PercentChangeInCapacity
+      AutoScalingGroupName: !Ref "ECSAutoScalingGroup"
+      Cooldown: 300
+      ScalingAdjustment: 30
+
+  MemoryScaleDownPolicy:
+    Type: AWS::AutoScaling::ScalingPolicy
+    Properties:
+      AdjustmentType: ChangeInCapacity
+      AutoScalingGroupName: !Ref "ECSAutoScalingGroup"
+      EstimatedInstanceWarmup: 300
+      MetricAggregationType: Average
+      PolicyType: StepScaling
+      StepAdjustments:
+        - MetricIntervalUpperBound: 0
+          ScalingAdjustment: "-1"
+
+  MemoryReservationAlert:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions: [ !Ref "MemoryScaleUpPolicy" ]
+      AlarmDescription: "Alarm if CPU too high or metric disappears"
+      ComparisonOperator: GreaterThanThreshold
+      Dimensions: 
+        - Name: ClusterName
+          Value: !Ref "ECSCluster"
+      EvaluationPeriods: 1
+      MetricName: MemoryReservation
+      Namespace: AWS/ENCS
+      Period: 60
+      Statistic: Maximum
+      Threshold: !Ref "ScaleUpPercent"
+      Unit: Percent
+
+  # scale down based on https://github.com/nclouds/nclouds_jenkins/blob/master/infrastructure/ecs-cluster.yaml#L172
+  MemoryScaleDownAlert:
+    Type: AWS::CloudWatch::Alarm
+    Properties:
+      ActionsEnabled: true
+      AlarmActions: [ !Ref "MemoryScaleDownPolicy" ]
+      AlarmDescription: "Memory utilization has dropped below scale-in threshold for more than 3 minutes"
+      ComparisonOperator: LessThanOrEqualToThreshold
+      Dimensions: 
+        - Name: ClusterName
+          Value: !Ref "ECSCluster"
+      EvaluationPeriods: 3
+      MetricName: MemoryReservation
+      Namespace: AWS/ENCS
+      Period: 60
+      Statistic: Average
+      Threshold: !Ref "ScaleDownPercent"
+      Unit: Percent
+
  # ServiceScalingTarget:
  #   Type: AWS::ApplicationAutoScaling::ScalableTarget
  #   Properties:
