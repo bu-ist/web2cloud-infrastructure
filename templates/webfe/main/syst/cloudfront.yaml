@@ -45,6 +45,7 @@ Resources:
               Forward: all
         Comment: !Sub "${AWS::StackName}-buedu"
         Enabled: true
+        IPV6Enabled: false
         Origins:
           - DomainName: !Ref "RoutingOriginDNS"
             Id: router
