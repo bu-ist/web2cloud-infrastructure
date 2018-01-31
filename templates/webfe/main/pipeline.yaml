@@ -60,6 +60,7 @@ Resources:
         Type: "S3"
       Environment:
         ComputeType: "BUILD_GENERAL1_SMALL"
+        # Docker version
         Image: "aws/codebuild/docker:17.09.0"
         #Image: "aws/codebuild/docker:1.12.1"
         Type: "LINUX_CONTAINER"
