@@ -65,23 +65,12 @@ Mappings:
       #AMIID: ami-9eb4b1e5
       # 2017.03 Image ID
       #AMIID: ami-0e297018
-      AMIID: ami-fad25980
-    us-east-2:
-      AMIID: ami-446f3521
-    us-west-1:
-      AMIID: ami-9fadf8ff
+      #AMIID: ami-fad25980
+      AMIID: ami-28456852
     us-west-2:
-      AMIID: ami-7abc111a
-    eu-west-1:
-      AMIID: ami-a1491ad2
-    eu-central-1:
-      AMIID: ami-54f5303b
-    ap-northeast-1:
-      AMIID: ami-9cd57ffd
-    ap-southeast-1:
-      AMIID: ami-a900a3ca
-    ap-southeast-2:
-      AMIID: ami-5781be34
+      # DR alternate region
+      #AMIID: ami-7abc111a
+      AMIID: ami-decc7fa6
 Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
