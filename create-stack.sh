@@ -2,6 +2,8 @@
 # 
 # Simple shell script to run a CloudFormation template with a set of parameters and tags
 #
+# Example  ./create-stack.sh w2c-non-prod base-landscape buaws-webrouter-base-test 
+# Note: ./create-stack.sh -d will show aws command
 
 Usage () {
   cat <<EOF
