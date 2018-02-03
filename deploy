@@ -4,6 +4,10 @@
 # 
 # https://github.com/awslabs/ecs-refarch-continuous-deployment
 #
+# Creates a subdirectory bucket for the landscape
+#
+# deploy profile bucket lanscape
+# example ./deploy w2c-non-prod buaws-web2cloud-nonprod test
 
 set -o errexit -o xtrace
 
