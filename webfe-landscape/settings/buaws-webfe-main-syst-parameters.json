@@ -29,11 +29,11 @@
   },
   {
     "ParameterKey": "GitHubRepo",
-    "ParameterValue": "docker-bufe-buedu"
+    "ParameterValue": "web-router-nonprod"
   },
   {
     "ParameterKey": "GitHubBranch",
-    "ParameterValue": "master"
+    "ParameterValue": "syst"
   },
   {
     "ParameterKey": "GitHubUser",
@@ -41,7 +41,7 @@
   },
   {
     "ParameterKey": "GitHubToken",
-    "ParameterValue": "206e1ff40ff002052f3bf7e62066af078308051c"
+    "ParameterValue": "da90c81e9d2ca0ec2b1b541329b877ead80981bd"
   },
   {
     "ParameterKey": "DesiredCapacity",
@@ -49,6 +49,6 @@
   },
   {
     "ParameterKey": "MaxSize",
-    "ParameterValue": "1"
+    "ParameterValue": "2"
   }
 ]
