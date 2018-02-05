@@ -60,6 +60,8 @@ Conditions:
   NotSslCertificate:
     !Equals [ '', !Ref 'PublicAlbAcmCertificate' ]
 Mappings:
+  # The location for this info is:
+  # https://docs.aws.amazon.com/AmazonECS/latest/developerguide/ecs-optimized_AMI_launch_latest.html
   AWSRegionToAMI:
     us-east-1:
       #AMIID: ami-9eb4b1e5
