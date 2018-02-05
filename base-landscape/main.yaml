@@ -20,11 +20,15 @@ Resources:
   ArtifactBucket:
     Type: AWS::S3::Bucket
     DeletionPolicy: Retain
+
+  LogBucket:
+    Type: AWS::S3::Bucket
+    DeletionPolicy: Retain
+
 #    Properties:
 #      Tags:
 #        - Key: Name
 #          Value: !Sub "${AWS::StackName}-artifact-s3"
-
 
 Outputs:
   Repository:
@@ -56,6 +60,21 @@ Outputs:
     Value: !Sub "arn:aws:s3:::${ArtifactBucket}/*"
     Export:
       Name: !Sub "${Prefix}-artifact-bucket-resource"
+ 
+  LogBucketName:
+    Value: !Sub "${LogBucket}"
+    Export:
+      Name: !Sub "${Prefix}-log-bucket-name"
+
+  LogBucketARN:
+    Value: !Sub "arn:aws:s3:::${LogBucket}"
+    Export:
+      Name: !Sub "${Prefix}-Log-bucket-arn"
+
+  LogBucketResource:
+    Value: !Sub "arn:aws:s3:::${LogBucket}/*"
+    Export:
+      Name: !Sub "${Prefix}-log-bucket-resource"
 
   #TemplateBucketName:
   #  Value: !Sub "${TemplateBucket}"
