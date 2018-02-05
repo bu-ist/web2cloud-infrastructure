@@ -91,6 +91,7 @@ Resources:
         TargetGroupArn: !Ref 'Port443TargetGroup'
       Role: 
         "Fn::ImportValue": !Sub "${Prefix}-container-role"
+      ServiceName: !Sub "port443-${Prefix}-service"
       TaskDefinition: !Ref 'taskdefinition'
 
   Port80Service:
@@ -104,6 +105,7 @@ Resources:
         TargetGroupArn: !Ref 'Port80TargetGroup'
       Role:
         "Fn::ImportValue": !Sub "${Prefix}-container-role"
+      ServiceName: !Sub "port80-${Prefix}-service"
       TaskDefinition: !Ref 'taskdefinition'
 
   Port80ServiceScalingTarget:
@@ -122,10 +124,10 @@ Resources:
       ScalableDimension: ecs:service:DesiredCount
       ServiceNamespace: ecs
 
-  Port80ServiceScalingPolicy:
+  Port80ServiceScaleOutPolicy:
     Type: AWS::ApplicationAutoScaling::ScalingPolicy
     Properties:
-      PolicyName: !Sub "${AWS::StackName}-port80-scaling-policy"
+      PolicyName: !Sub "port80-scaleout-${AWS::StackName}-policy"
       PolicyType: StepScaling
       ScalingTargetId: !Ref 'Port80ServiceScalingTarget'
       ScalableDimension: ecs:service:DesiredCount
@@ -137,25 +139,61 @@ Resources:
         StepAdjustments:
         - MetricIntervalLowerBound: 0
           ScalingAdjustment: 2
-        - MetricIntervalUpperBound: 0
-          ScalingAdjustment: "-1"
+
+  # basing this work on https://github.com/pahud/ecs-cfn-refarch/blob/master/cloudformation/service.yml
+  #Port80ServiceScalingDownPolicy:
+  #  Type: AWS::ApplicationAutoScaling::ScalingPolicy
+  #  Properties:
+  #    PolicyName: !Sub "port80-scaling-down-policy-${AWS::StackName}"
+  #    PolicyType: StepScaling
+  #    ScalingTargetId: !Ref 'Port80ServiceScalingTarget'
+  #    ScalableDimension: ecs:service:DesiredCount
+  #    ServiceNamespace: ecs
+  #    StepScalingPolicyConfiguration:
+  #      AdjustmentType: ChangeInCapacity
+  #      Cooldown: 60
+  #      MetricAggregationType: Average
+  #      StepAdjustments:
+  #      - MetricIntervalLowerBound: 0
+  #        ScalingAdjustment: "-1"
+  #      - MetricIntervalUpperBound: 0
+  #        ScalingAdjustment: "-1"
 
 
-  Port80ScalingCPUAlarm:
+  #Port80ScalingDownCPUAlarm:
+  #  Type: AWS::CloudWatch::Alarm
+  #  Properties:
+  #    AlarmDescription: port 80 CPU scaling down
+  #    AlarmActions: [!Ref 'Port80ServiceScalingDownPolicy']
+  #    ComparisonOperator: LessThanThreshold
+  #    Dimensions:
+  #    - Name: ServiceName
+  #      Value: !GetAtt 'Port80Service.Name'
+  #    - Name: ClusterName
+  #      Value: !Ref "ECSCluster"
+  #    EvaluationPeriods: '2'
+  #    MetricName: !Sub "${AWS::StackName}-port80-cpu-alarm"
+  #    Namespace: AWS/ECS
+  #    Period: '300'
+  #    Statistic: Average
+  #    Threshold: '20'
+
+  Port80CPUScaleOutAlarm:
     Type: AWS::CloudWatch::Alarm
     Properties:
-      AlarmDescription: Alarm if our ALB generates too many HTTP 500s.
-      AlarmActions: [!Ref 'Port80ServiceScalingPolicy']
+      AlarmDescription: !Sub "port80-cpuout-${Prefix}-alarm"
+      AlarmActions: 
+        - !Ref 'Port80ServiceScaleOutPolicy'
       ComparisonOperator: GreaterThanOrEqualToThreshold
       Dimensions:
       - Name: ServiceName
-        Value: !Ref 'Port80Service'
+        Value: !GetAtt Port80Service.Name
       - Name: ClusterName
-        Value: !Ref "ECSCluster"
+        Value: !Ref ECSCluster
       EvaluationPeriods: '1'
-      MetricName: !Sub "${AWS::StackName}-port80-cpu-alarm"
+      MetricName: !Sub "port80-cpuout-${Prefix}-metric"
       Namespace: AWS/ECS
-      Period: '300'
+      Period: '60'
       Statistic: Average
       Threshold: '80'
 

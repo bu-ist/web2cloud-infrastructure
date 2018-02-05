@@ -30,7 +30,7 @@ Parameters:
     Description: Number of instances to launch in your ECS cluster.
   MaxSize:
     Type: Number
-    Default: '1'
+    Default: '3'
     Description: Maximum number of instances that can be launched in your ECS cluster.
   IdleTimeoutForLB:
     Type: Number
@@ -76,6 +76,8 @@ Mappings:
 Resources:
   ECSCluster:
     Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Sub "${Prefix}-ecscluster"
   CloudwatchLogsGroup:
     Type: AWS::Logs::LogGroup
     Properties:
@@ -246,7 +248,7 @@ Resources:
           Value: !Ref "ECSCluster"
       EvaluationPeriods: 1
       MetricName: MemoryReservation
-      Namespace: AWS/ENCS
+      Namespace: AWS/ECS
       Period: 60
       Statistic: Maximum
       Threshold: !Ref "ScaleUpPercent"
@@ -265,7 +267,7 @@ Resources:
           Value: !Ref "ECSCluster"
       EvaluationPeriods: 3
       MetricName: MemoryReservation
-      Namespace: AWS/ENCS
+      Namespace: AWS/ECS
       Period: 60
       Statistic: Average
       Threshold: !Ref "ScaleDownPercent"
