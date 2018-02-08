@@ -48,7 +48,7 @@ Parameters:
     ConstraintDescription: Please choose a valid instance type.
   ScaleUpPercent:
     Type: Number
-    Default: '50'
+    Default: '80'
     Description: Percent threshold above which we add more ECS nodes
   ScaleDownPercent:
     Type: Number
