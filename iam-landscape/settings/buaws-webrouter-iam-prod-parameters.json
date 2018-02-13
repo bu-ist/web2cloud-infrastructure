@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "Prefix",
+    "ParameterValue": "buaws-webrouter-prod"
+  },
+  {
+    "ParameterKey": "VpcPrefix",
+    "ParameterValue": "buaws-websites-prod"
+  }
+]

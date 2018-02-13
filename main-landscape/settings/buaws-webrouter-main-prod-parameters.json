@@ -1,0 +1,58 @@
+[
+  {
+    "ParameterKey": "Prefix",
+    "ParameterValue": "buaws-webrouter-prod"
+  },
+  {
+    "ParameterKey": "VpcPrefix",
+    "ParameterValue": "buaws-websites-prod"
+  },
+  {
+    "ParameterKey": "Landscape",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "TemplateBucket",
+    "ParameterValue": "https://s3.amazonaws.com/buaws-websites-prod-us-east-1"
+  },
+  {
+    "ParameterKey": "TemplatePath",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "PublicAlbAcmCertificate",
+    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/63b76bad-f185-4680-a5e4-b78cf8ace3d2"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "chefdeveloper"
+  },
+  {
+    "ParameterKey": "GitHubRepo",
+    "ParameterValue": "web-router-prod"
+  },
+  {
+    "ParameterKey": "GitHubBranch",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "GitHubUser",
+    "ParameterValue": "dsmk"
+  },
+  {
+    "ParameterKey": "GitHubToken",
+    "ParameterValue": "da90c81e9d2ca0ec2b1b541329b877ead80981bd"
+  },
+  {
+    "ParameterKey": "DesiredCapacity",
+    "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "MaxSize",
+    "ParameterValue": "4"
+  },
+ {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "m4.large"
+  }
+]
