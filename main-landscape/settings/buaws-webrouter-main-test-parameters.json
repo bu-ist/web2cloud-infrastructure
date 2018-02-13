@@ -12,6 +12,10 @@
     "ParameterValue": "test"
   },
   {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "m4.large"
+  },
+  {
     "ParameterKey": "TemplateBucket",
     "ParameterValue": "https://s3.amazonaws.com/buaws-web2cloud-nonprod-us-east-1"
   },
@@ -21,7 +25,7 @@
   },
   {
     "ParameterKey": "PublicAlbAcmCertificate",
-    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/63b76bad-f185-4680-a5e4-b78cf8ace3d2"
+    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/6cc51864-7023-480c-a7be-6c3570cdafbf"
   },
   {
     "ParameterKey": "KeyName",

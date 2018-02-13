@@ -105,6 +105,7 @@ Resources:
         KeyName: !Sub "${KeyName}"
         DesiredCapacity: !Sub "${DesiredCapacity}"
         MaxSize: !Sub "${MaxSize}"
+        InstanceType: !Ref "InstanceType"
 
   WebRouterService:
     Type: AWS::CloudFormation::Stack
