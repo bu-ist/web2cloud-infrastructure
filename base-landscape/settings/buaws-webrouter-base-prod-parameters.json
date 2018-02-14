@@ -1,6 +1,6 @@
 [
   {
     "ParameterKey": "Prefix",
-    "ParameterValue": "buaws-websites-prod"
+    "ParameterValue": "buaws-webrouter-prod"
   }
 ]
