@@ -8,6 +8,7 @@
 #
 # deploy profile bucket lanscape
 # example ./deploy w2c-non-prod buaws-web2cloud-nonprod test
+# NOTE MAY NEED TO RUN TWICE! (because of lag in create bucket)
 
 set -o errexit -o xtrace
 
@@ -66,7 +67,7 @@ exit
 #  us-east-1
 #  us-east-2
 #  us-west-1
-#  us-west-2
+#ws-waf-security-automations  us-west-2
 #)
 
 #for region in "${regions[@]}"
