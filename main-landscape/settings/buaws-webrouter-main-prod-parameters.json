@@ -21,7 +21,7 @@
   },
   {
     "ParameterKey": "PublicAlbAcmCertificate",
-    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/63b76bad-f185-4680-a5e4-b78cf8ace3d2"
+    "ParameterValue": "arn:aws:acm:us-east-1:502886588882:certificate/42559eeb-7c2d-40c9-afe3-e0feb12a81e6"
   },
   {
     "ParameterKey": "KeyName",
