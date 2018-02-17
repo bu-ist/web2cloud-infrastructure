@@ -30,14 +30,26 @@ Parameters:
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
     Type: String
     Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
-  DesiredCapacity:
+  DesiredServiceCapacity:
     Type: Number
     Default: '1'
-    Description: Number of instances to launch in your ECS cluster.
-  MaxSize:
+    Description: Number of containers to launch in your ECS cluster.
+  MinServiceCapacity:
     Type: Number
     Default: '1'
-    Description: Maximum number of instances that can be launched in your ECS cluster.
+    Description: Minimum number of containers that can be launched in your ECS cluster.
+  MaxServiceCapacity:
+    Type: Number
+    Default: '10'
+    Description: Maximum number of containers that can be launched in your ECS cluster.
+  CPUReservationNGINX:
+    Type: Number
+    Default: '512'
+    Description: CPU reservation value for NGINX configuration 
+  MemoryLimitNGINX:
+    Type: Number
+    Default: '480'
+    Description: Hard limit to memory usage (also relevant for reservation
 Conditions:
   SslCertificate:
     !Not [!Equals [ '', !Ref PublicAlbAcmCertificate ] ]
@@ -50,7 +62,7 @@ Resources:
       Family: !Join ['', [!Ref 'AWS::StackName', -bufe]]
       ContainerDefinitions:
       - Name: "bu-webrouter"
-        Cpu: '10'
+        Cpu: !Ref 'CPUReservationNGINX'
         Essential: 'true'
         # uncomment the following if we can make the root file system read-only
         #ReadonlyRootFilesystem: 'true'
@@ -65,7 +77,7 @@ Resources:
         #    -
         #      - "Fn::ImportValue": !Sub "${Prefix}-container-repository-uri"
         #      - "latest"
-        Memory: '300'
+        Memory: !Ref 'MemoryLimitNGINX'
         LogConfiguration:
           LogDriver: awslogs
           Options:
@@ -84,7 +96,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       Cluster: !Ref 'ECSCluster'
-      DesiredCount: !Ref 'DesiredCapacity'
+      DesiredCount: !Ref 'DesiredServiceCapacity'
       LoadBalancers:
       - ContainerName: "bu-webrouter"
         ContainerPort: '443'
@@ -98,7 +110,7 @@ Resources:
     Type: AWS::ECS::Service
     Properties:
       Cluster: !Ref 'ECSCluster'
-      DesiredCount: !Ref 'DesiredCapacity'
+      DesiredCount: !Ref 'DesiredServiceCapacity'
       LoadBalancers:
       - ContainerName: "bu-webrouter"
         ContainerPort: '80'
@@ -111,8 +123,8 @@ Resources:
   Port80ServiceScalingTarget:
     Type: AWS::ApplicationAutoScaling::ScalableTarget
     Properties:
-      MaxCapacity: 2
-      MinCapacity: 1
+      MaxCapacity: !Ref 'MaxServiceCapacity'
+      MinCapacity: !Ref 'MinServiceCapacity'
       #ResourceId: !Ref "Port80Service" 
       ResourceId: !Join
         - /
@@ -139,6 +151,22 @@ Resources:
         StepAdjustments:
         - MetricIntervalLowerBound: 0
           ScalingAdjustment: 2
+
+  Port80ServiceScaleInPolicy:
+    Type: AWS::ApplicationAutoScaling::ScalingPolicy
+    Properties:
+      PolicyName: !Sub "port80-scalein-${AWS::StackName}-policy"
+      PolicyType: StepScaling
+      ScalingTargetId: !Ref 'Port80ServiceScalingTarget'
+      ScalableDimension: ecs:service:DesiredCount
+      ServiceNamespace: ecs
+      StepScalingPolicyConfiguration:
+        AdjustmentType: ChangeInCapacity
+        Cooldown: 60
+        MetricAggregationType: Average
+        StepAdjustments:
+        - MetricIntervalLowerBound: 0
+          ScalingAdjustment: "-2"
 
   # basing this work on https://github.com/pahud/ecs-cfn-refarch/blob/master/cloudformation/service.yml
   #Port80ServiceScalingDownPolicy:
