@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "Alias",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "WebACL",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "RoutingOriginDNS",
+    "ParameterValue": "syst-webrouter-152275674.us-east-1.elb.amazonaws.com"
+  },
+  {
+    "ParameterKey": "SSLCertificateArn",
+    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/bc063cb0-89fc-4dd8-93ed-703cc15b53bc"
+  }
+]

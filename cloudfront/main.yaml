@@ -1,25 +1,46 @@
 AWSTemplateFormatVersion: '2010-09-09'
 Parameters:
-  Prefix:
+  Alias:
     Type: String
-    Default: "web2cloud-test"
-  PublicAlbAcmCertificate:
-    AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Default: ""
+    Description: "Alias of the server which must be unique in CloudFront"
+    AllowedPattern: ^$|^[a-z0-9\-\.]+$
+  WebACL:
+    Type: String
+    Default: ""
+    Description: "WebACL to set for this CloudFront distribution"
+    AllowedPattern: ^$|^[0-9a-f\-]+$
+  RoutingOriginDNS:
+    Type: String
+    Description: 'DNS name for the front-end routing ALB'
+    Default: "test"
+  SSLCertificateArn:
+    #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
     Type: String
     Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
-  VpcId:
-    Type: AWS::EC2::VPC::Id
-    Description: Select a VPC that allows instances access to the Internet.
+
+Conditions:
+  AliasSetCondition: !Not
+    - !Equals
+      - !Ref 'Alias'
+      - ''
+  WebACLSetCondition: !Not
+    - !Equals
+      - !Ref 'WebACL'
+      - ''
+
 Resources:
   CloudFrontDistribution:
     Type: AWS::CloudFront::Distribution
     Properties:
       DistributionConfig:
-        Aliases:
-          - www-test.bu.edu
+        Aliases: !If
+          - AliasSetCondition
+          - !Ref 'Alias'
+          - !Ref "AWS::NoValue"
         DefaultCacheBehavior:
-          TargetOriginId: buedu
+          TargetOriginId: router
           ViewerProtocolPolicy: allow-all
           AllowedMethods:
             - DELETE
@@ -38,14 +59,15 @@ Resources:
               - X-Upstream
             Cookies:
               Forward: all
-        Comment: !Sub "${AWS::StackName}-buedu"
+        Comment: !Sub "${Alias}"
         Enabled: true
+        IPV6Enabled: false
         Origins:
-          - DomainName: 
-              "Fn::ImportValue": !Sub "${Prefix}-buedu-alb-dnsname"
-            Id: buedu
+          - DomainName: !Ref "RoutingOriginDNS"
+            Id: router
             CustomOriginConfig:
               HTTPPort: '80'
+              #OriginProtocolPolicy: http-only
               HTTPSPort: '443'
               OriginProtocolPolicy: match-viewer
               OriginSSLProtocols:
@@ -54,15 +76,19 @@ Resources:
                 - TLSv1.2
         PriceClass: PriceClass_100
         ViewerCertificate:
-          AcmCertificateArn: !Ref PublicAlbAcmCertificate
+          AcmCertificateArn: !Ref SSLCertificateArn
           SslSupportMethod: sni-only
           MinimumProtocolVersion: TLSv1
+        WebACLId: !If
+          - WebACLSetCondition
+          - !Ref 'WebACL'
+          - !Ref 'AWS::NoValue'
 Outputs:
   CloudFrontARN:
     Value: !Ref CloudFrontDistribution
     Export:
-      Name: !Sub "${Prefix}-buedu-cfn-arn"
-  #CloudFrontDNS:
-  #  Value: !GetAtt [ CloudFrontDistribution, DNSName ]
-  #  Export:
-  #    Name: !Sub "${Prefix}-buedu-cfn-dnsname"
+      Name: !Sub "${AWS::StackName}-buedu-cfn-arn"
+  CloudFrontDNS:
+    Value: !GetAtt "CloudFrontDistribution.DomainName"
+    Export:
+      Name: !Sub "${AWS::StackName}-buedu-cfn-domainname"
