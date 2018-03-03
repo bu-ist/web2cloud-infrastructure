@@ -19,11 +19,25 @@ Parameters:
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
     Type: String
     Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
+  LogPrefix:
+    #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: 'S3 log bucket for our output'
+    Type: String
+    Default: "cf-logs/"
+  LogBucket:
+    #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: 'S3 log bucket for our output'
+    Type: String
+    Default: ""
 
 Conditions:
   AliasSetCondition: !Not
     - !Equals
       - !Ref 'Alias'
+      - ''
+  LogBucketSetCondition: !Not
+    - !Equals
+      - !Ref 'LogBucket'
       - ''
   WebACLSetCondition: !Not
     - !Equals
@@ -37,7 +51,7 @@ Resources:
       DistributionConfig:
         Aliases: !If
           - AliasSetCondition
-          - !Ref 'Alias'
+          - [ !Ref 'Alias' ]
           - !Ref "AWS::NoValue"
         DefaultCacheBehavior:
           TargetOriginId: router
@@ -62,6 +76,13 @@ Resources:
         Comment: !Sub "${Alias}"
         Enabled: true
         IPV6Enabled: false
+        Logging:
+          Bucket: !If
+            - LogBucketSetCondition
+            - !Ref 'LogBucket'
+            - !Ref 'AWS::NoValue'
+          IncludeCookies: false
+          Prefix: !Ref 'LogPrefix'
         Origins:
           - DomainName: !Ref "RoutingOriginDNS"
             Id: router

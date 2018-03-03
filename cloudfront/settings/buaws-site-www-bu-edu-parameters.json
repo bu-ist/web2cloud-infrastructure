@@ -1,0 +1,22 @@
+[
+  {
+    "ParameterKey": "Alias",
+    "ParameterValue": "www.bu.edu"
+  },
+  {
+    "ParameterKey": "WebACL",
+    "ParameterValue": " 94bea0cd-5b90-401f-8e9d-de45a7b893ee"
+  },
+  {
+    "ParameterKey": "RoutingOriginDNS",
+    "ParameterValue": "prod-webrouter-1806055511.us-east-1.elb.amazonaws.com"
+  },
+  {
+    "ParameterKey": "SSLCertificateArn",
+    "ParameterValue": "arn:aws:acm:us-east-1:502886588882:certificate/42559eeb-7c2d-40c9-afe3-e0feb12a81e6"
+  },
+  {
+    "ParameterKey": "LogBucket",
+    "ParameterValue": "buaws-webrouter-base-prod-logbucket-1elkja1km49z7.s3.amazonaws.com"
+  }
+]
