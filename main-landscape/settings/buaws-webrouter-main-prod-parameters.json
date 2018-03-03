@@ -44,20 +44,12 @@
     "ParameterValue": "da90c81e9d2ca0ec2b1b541329b877ead80981bd"
   },
   {
-    "ParameterKey": "CPUReservationNGINX",
-    "ParameterValue": "200"
-  },
-  {
-    "ParameterKey": "MemoryLimitNGINX",
-    "ParameterValue": "800"
-  },
-  {
     "ParameterKey": "DesiredServiceCapacity",
     "ParameterValue": "4"
   },
   {
     "ParameterKey": "MaxServiceCapacity",
-    "ParameterValue": "16"
+    "ParameterValue": "30"
   },
   {
     "ParameterKey": "DesiredCapacity",
