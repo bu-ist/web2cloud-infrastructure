@@ -25,7 +25,7 @@
   },
   {
     "ParameterKey": "KeyName",
-    "ParameterValue": "chefdeveloper"
+    "ParameterValue": "buaws-websites-prod-2"
   },
   {
     "ParameterKey": "GitHubRepo",
@@ -44,12 +44,32 @@
     "ParameterValue": "da90c81e9d2ca0ec2b1b541329b877ead80981bd"
   },
   {
+    "ParameterKey": "CPUReservationNGINX",
+    "ParameterValue": "200"
+  },
+  {
+    "ParameterKey": "MemoryLimitNGINX",
+    "ParameterValue": "800"
+  },
+  {
+    "ParameterKey": "DesiredServiceCapacity",
+    "ParameterValue": "4"
+  },
+  {
+    "ParameterKey": "MaxServiceCapacity",
+    "ParameterValue": "16"
+  },
+  {
     "ParameterKey": "DesiredCapacity",
-    "ParameterValue": "1"
+    "ParameterValue": "2"
+  },
+  {
+    "ParameterKey": "MinSize",
+    "ParameterValue": "2"
   },
   {
     "ParameterKey": "MaxSize",
-    "ParameterValue": "4"
+    "ParameterValue": "8"
   },
  {
     "ParameterKey": "InstanceType",
