@@ -65,6 +65,6 @@
   },
  {
     "ParameterKey": "InstanceType",
-    "ParameterValue": "m4.large"
+    "ParameterValue": "t2.medium"
   }
 ]
