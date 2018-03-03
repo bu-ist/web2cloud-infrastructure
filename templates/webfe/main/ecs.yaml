@@ -220,7 +220,7 @@ Resources:
           start amazon-ssm-agent
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
 
-  MemoryScaleUpPolicy:
+  CPUScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: PercentChangeInCapacity
@@ -228,7 +228,7 @@ Resources:
       Cooldown: 300
       ScalingAdjustment: 30
 
-  MemoryScaleDownPolicy:
+  CPUScaleDownPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: ChangeInCapacity
@@ -240,39 +240,39 @@ Resources:
         - MetricIntervalUpperBound: 0
           ScalingAdjustment: "-1"
 
-  MemoryReservationAlert:
+  CPUReservationAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmActions: [ !Ref "MemoryScaleUpPolicy" ]
+      AlarmActions: [ !Ref "CPUScaleUpPolicy" ]
       AlarmDescription: "Alarm if CPU too high or metric disappears"
       ComparisonOperator: GreaterThanThreshold
       Dimensions: 
         - Name: ClusterName
           Value: !Ref "ECSCluster"
       EvaluationPeriods: 1
-      MetricName: MemoryReservation
+      MetricName: CPUReservation
       Namespace: AWS/ECS
-      Period: 60
+      Period: 300
       Statistic: Maximum
       Threshold: !Ref "ScaleUpPercent"
       Unit: Percent
 
   # scale down based on https://github.com/nclouds/nclouds_jenkins/blob/master/infrastructure/ecs-cluster.yaml#L172
-  MemoryScaleDownAlert:
+  CPUScaleDownAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmActions: [ !Ref "MemoryScaleDownPolicy" ]
-      AlarmDescription: "Memory utilization has dropped below scale-in threshold for more than 3 minutes"
+      AlarmActions: [ !Ref "CPUScaleDownPolicy" ]
+      AlarmDescription: "CPU utilization has dropped below scale-in threshold for more than 3 minutes"
       ComparisonOperator: LessThanOrEqualToThreshold
       Dimensions: 
         - Name: ClusterName
           Value: !Ref "ECSCluster"
       EvaluationPeriods: 3
-      MetricName: MemoryReservation
+      MetricName: CPUReservation
       Namespace: AWS/ECS
-      Period: 60
+      Period: 300
       Statistic: Average
       Threshold: !Ref "ScaleDownPercent"
       Unit: Percent
