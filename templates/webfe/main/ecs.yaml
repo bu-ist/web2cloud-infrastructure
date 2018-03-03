@@ -90,7 +90,7 @@ Resources:
   WebRouterALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub "${Landscape}-webrouter"
+      Name: !Sub "${Landscape}-webrouter-alb"
       Scheme: internet-facing
       LoadBalancerAttributes:
       - Key: idle_timeout.timeout_seconds
@@ -155,7 +155,7 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub "${Landscape}-webrouter-p80"
+      Name: !Sub "${Landscape}-webrouter-p80-tg"
       Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 2
@@ -171,7 +171,7 @@ Resources:
       HealthCheckProtocol: HTTPS
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub "${Landscape}-webrouter-p443"
+      Name: !Sub "${Landscape}-webrouter-p443-tg"
       Port: 443
       Protocol: HTTPS
       UnhealthyThresholdCount: 2

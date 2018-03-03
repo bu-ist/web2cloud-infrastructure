@@ -37,11 +37,11 @@ Parameters:
     Description: Name of an existing EC2 KeyPair to enable SSH access to the ECS instances.
   CPUReservationNGINX:
     Type: Number
-    Default: '512'
+    Default: '128'
     Description: CPU slots to reserve for each NGINX container
   MemoryLimitNGINX:
     Type: Number
-    Default: '480'
+    Default: '300'
     Description: Max memory reserved for each NGINX container
   DesiredServiceCapacity:
     Type: Number
