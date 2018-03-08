@@ -44,11 +44,19 @@
     "ParameterValue": "da90c81e9d2ca0ec2b1b541329b877ead80981bd"
   },
   {
+    "ParameterKey": "DesiredServiceCapacity",
+    "ParameterValue": "4"
+  },
+  {
+    "ParameterKey": "MaxServiceCapacity",
+    "ParameterValue": "20"
+  },
+  {
     "ParameterKey": "DesiredCapacity",
     "ParameterValue": "1"
   },
   {
     "ParameterKey": "MaxSize",
-    "ParameterValue": "2"
+    "ParameterValue": "8"
   }
 ]
