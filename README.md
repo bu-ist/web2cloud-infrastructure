@@ -1,3 +1,70 @@
+## Procedure for building the core infrastructure
+
+
+## Building a Cloudfront virtual host
+
+Once we create a CloudFront distribution we do not want to have to change it if at all posible. To make that 
+possible we are building CloudFront distributions using a completely separate CloudFormation template from 
+the other infrastructure.  This means that the CloudFront distributions will not be nested with another stack
+nor import any values from another stack.  
+
+Right now we are naming the CloudFormation stacks buaws-site-dashedhostname where dashedhostname is the hostname 
+with all dots converted to dashes. For example `www-syst.bu.edu` becomes `www-syst-bu-edu` - this is because 
+CloudFormation stacks are not allowed to have dots in their name.
+
+This does mean that one needs to do the following process to get up a new CloudFront distribution/virtual host:
+
+1. Import the InCommon SSL certificate into acm and record the ARN of the certificate.  This common name in the
+   certificate becomes the Alias in the CloudFormation template.
+
+2. Determine the WebACL value by looking at the WAFWebACL output of the buaws-webrouter-landscape-waf stack.
+
+3. Determine the CloudFront log bucket by looking at the AccessLogBucket parameter of the 
+   buaws-webrouter-landscape-waf stack.  Append `.s3.amazonaws.com` to the value to get the LogBucket parameter
+   of the CloudFront stack.
+
+4. Determine the RoutingOriginDNS entry by looking at the WebRouterDNS output from the buaws-webrouter-main-landscape
+   stack.
+
+5. Build the settings file for this virtual host in cloudfront/settings/stackname-parameters.json.
+
+## How to calculate the memory and CPU size parameters
+
+We are taking advantage of the target-based scaling for ECS to try and simplify this.  Also, we are scaling both ECS
+and EC2 based on CPU values - actual CPU usage for ECS and reserved CPU for the EC2 instances.  Memory is not an 
+issue with NGINX so we don't have to worry about that.  
+
+Based on the results of load testing we might want to switch ECS to ALBRequestCountPerTarget.  That way we could scale
+to keep ~500-600 connections to each NGINX container which is well under the 1024 maximum NGINX is currently set to.  
+This should only be done if load testing shows that this version does not work properly.
+
+ECS will not schedule docker containers if there is not enough memory to meet the memory limit.  This means that we 
+need to calculate a value such that our minimum fits within the space allocated.
+
+For example with our production load of 2 m4.large instances:
+
+```
+ m4.large x2 : cpu=2048*2 = 4048
+               memory=8G*2 = 16G
+
+ minimal state is 4 port 80 instances and 4 port 443 instances and the memory in those instances needs to fit in 
+ less than 80% of the memory of the m4.large instances so auto-scaling will work properly.  In addition the values should be such that it can create 
+ at least two more instance on each system.  Without that ECS will seem stuck because it wants to add more instances but there is 
+ no room.  This problem does not seem to be logged anywhere - you just need to compare the desired and current values.
+
+ Back to the calculations, let's plan for 8 instances on each instance in production with 4 being our normal state.
+ 100% / 6 = 16.66%.  If we set the memory to 10% then 8 instances will total 80% of the memory and 9 instances total 90% of memory.
+ So we should change the 80% memory limit to 70% - this means that MemoryLimitNGINX should be 8096*0.10 = ~800 and CPU
+ should be 2048* 0.10 = ~200.
+
+ Our non-prod instances are running t2.small and we want to have 2 instances.  t2.small CPU is 1024 and memory is 2048.  If we do the same
+ calculation then CPU should be 1024*0.15 = ~150 and memory should be 2048 *0.15 = ~300.
+
+ ```
+
+# older stuff 
+
+
 Starting to look into using nested stack sets for some of this.  This means that the CF templates need to
 be stored in an S3 bucket.  This approach uses the approach similar to:
 
@@ -111,3 +178,6 @@ aws --profile webpoc cloudformation validate-template --template-body file:///ho
 VPC: This can be done with the CLI doing something like:
 
 aws --profile webpoc cloudformation create-stack --template-body file://1-vpc.yaml --tags file://non-prod-vpc-tags.json --parameters file://non-prod-vpc-parameters.json --stack-name vpctest
+
+https://github.com/pahud/ecs-cfn-refarch/blob/master/cloudformation/service.yml
+
