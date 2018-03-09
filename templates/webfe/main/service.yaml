@@ -6,10 +6,12 @@ Parameters:
   Landscape:
     Type: String
     Default: "test"
-  Tag:
+  RouterImage:
     Type: String
-    Default: "9035b0c7"
-    #Default: "latest"
+    Default: "amazon/amazon-ecs-sample"
+  RouterTag:
+    Type: String
+    Default: "latest"
   CloudwatchLogsGroup:
     Type: String
     Description: Reference to logs group for ECS cluster apps
@@ -22,9 +24,6 @@ Parameters:
   Port443TargetGroup:
     Type: String
     Description: Reference to target group for port 443
-  DockerImage:
-    Type: String
-    Default: "amazon/amazon-ecs-sample"
   PublicAlbAcmCertificate:
     #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
@@ -69,7 +68,8 @@ Resources:
         # The following is to avoid the catch-22: we don't have an image in our ECR until 
         # the CodePipeline runs and the service has already failed.  We should investigate 
         # having this be our web-router-base Docker image when we have it.
-        Image: amazon/amazon-ecs-sample
+        Image: !Sub "${RouterImage}:${RouterTag}"
+        #Image: amazon/amazon-ecs-sample
         #Image: !Sub "${AWS::AccountId}.dkr.ecr.${AWS::Region}.amazonaws.com/${Repository}:${Tag}"
         #Image: 
         #  "Fn::Join": 

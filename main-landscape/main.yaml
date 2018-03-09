@@ -20,10 +20,13 @@ Parameters:
   Landscape:
     Type: String
     Default: "test"
-  Tag:
+  RouterImage:
     Type: String
-    Default: "9035b0c7"
+    Default: ""
     #Default: "latest"
+  RouterTag:
+    Type: String
+    Default: "latest"
   DockerImage:
     Type: String
     Default: "bufe-buedu"
@@ -95,6 +98,9 @@ Parameters:
     Type: String
     Default: dsmk
 
+Conditions:
+  DoDefaultImageCondition:
+    !Equals [ '' , !Ref 'RouterImage' ]
 
 #Metadata:
 #  AWS::CloudFormation::Interface:
@@ -138,6 +144,10 @@ Resources:
     Properties:
       TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/service.yaml"
       Parameters:
+        RouterImage: !If
+          - DoDefaultImageCondition
+          - "Fn::ImportValue": !Sub "${Prefix}-container-repository-uri" 
+          - !Ref "RouterImage"
         Prefix: !Sub "${Prefix}"
         Landscape: !Sub "${Landscape}"
         PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
