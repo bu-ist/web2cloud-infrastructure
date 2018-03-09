@@ -38,29 +38,32 @@ Based on the results of load testing we might want to switch ECS to ALBRequestCo
 to keep ~500-600 connections to each NGINX container which is well under the 1024 maximum NGINX is currently set to.  
 This should only be done if load testing shows that this version does not work properly.
 
-ECS will not schedule docker containers if there is not enough memory to meet the memory limit.  This means that we 
-need to calculate a value such that our minimum fits within the space allocated.
 
-For example with our production load of 2 m4.large instances:
+## Setting up a new landscape
 
-```
- m4.large x2 : cpu=2048*2 = 4048
-               memory=8G*2 = 16G
+We based our ECS CodeDeploy version on a quick reference.  It used a vanilla Amazon container as part of the service
+definition to get the initial version up.  However, this has the following issue.  If you do an update stack with that
+version it will try to revert to the initial version and the health check for the ALB will fail.  This then causes 
+the stack to say it should rollback to the previous version which also has the initial version.  Eventually this will 
+fail.  
 
- minimal state is 4 port 80 instances and 4 port 443 instances and the memory in those instances needs to fit in 
- less than 80% of the memory of the m4.large instances so auto-scaling will work properly.  In addition the values should be such that it can create 
- at least two more instance on each system.  Without that ECS will seem stuck because it wants to add more instances but there is 
- no room.  This problem does not seem to be logged anywhere - you just need to compare the desired and current values.
+We solve that problem by making the CodePipeline update both the versioned image (tag based on GIT hash) and the "latest"
+tag in the ECR.  Then we make the CloudFormation reference the latest tag in the repo.  This means that 
+CloudFormation service updates will roll back to the latest version in the ECR.  The only negative to this approach is
+creating a new landscape which will need to do something like:
 
- Back to the calculations, let's plan for 8 instances on each instance in production with 4 being our normal state.
- 100% / 6 = 16.66%.  If we set the memory to 10% then 8 instances will total 80% of the memory and 9 instances total 90% of memory.
- So we should change the 80% memory limit to 70% - this means that MemoryLimitNGINX should be 8096*0.10 = ~800 and CPU
- should be 2048* 0.10 = ~200.
+1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile s3bucket landscape
+2. Run the base-landscape stack: ./create-stack awsprofile base-landscape buaws-webrouter-base-prod
+3. Run the iam-landscape stack: ./create-stack awsprofile iam-landscape buaws-webrouter-iam-prod
+4. Do the steps to create the WAF
+5. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
+6. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and 
+   do an update-stack.
+8. Run the main-landscape to build the ECS cluster, webrouter service, and main CodePipeline: ./create-stack awsprofile main-landscape buaws-webrouter-main-prod
+9. Build the CloudFront stacks for your landscape:
 
- Our non-prod instances are running t2.small and we want to have 2 instances.  t2.small CPU is 1024 and memory is 2048.  If we do the same
- calculation then CPU should be 1024*0.15 = ~150 and memory should be 2048 *0.15 = ~300.
-
- ```
+Note that the only time you need the bootstrap stack is just after you create the base-landscape stack.  
+You can delete and rebuild the main-landscape stack without issues.
 
 # older stuff 
 
