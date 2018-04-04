@@ -1,39 +1,39 @@
 [
   {
     "ParameterKey": "Prefix",
-    "ParameterValue": "buaws-webrouter-prod"
+    "ParameterValue": "buaws-webrouter-syst"
   },
   {
     "ParameterKey": "VpcPrefix",
-    "ParameterValue": "buaws-websites-prod"
+    "ParameterValue": "buaws-web2cloud-nonprod"
   },
   {
     "ParameterKey": "Landscape",
-    "ParameterValue": "prod"
+    "ParameterValue": "syst"
   },
   {
     "ParameterKey": "TemplateBucket",
-    "ParameterValue": "https://s3.amazonaws.com/buaws-websites-prod-us-east-1"
+    "ParameterValue": "https://s3.amazonaws.com/buaws-web2cloud-nonprod-us-east-1"
   },
   {
     "ParameterKey": "TemplatePath",
-    "ParameterValue": "prod"
+    "ParameterValue": "syst"
   },
   {
     "ParameterKey": "PublicAlbAcmCertificate",
-    "ParameterValue": "arn:aws:acm:us-east-1:502886588882:certificate/42559eeb-7c2d-40c9-afe3-e0feb12a81e6"
+    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/bc063cb0-89fc-4dd8-93ed-703cc15b53bc"
   },
   {
     "ParameterKey": "KeyName",
-    "ParameterValue": "buaws-websites-prod-2"
+    "ParameterValue": "chefdeveloper"
   },
   {
     "ParameterKey": "GitHubRepo",
-    "ParameterValue": "web-router-prod"
+    "ParameterValue": "web-router-nonprod"
   },
   {
     "ParameterKey": "GitHubBranch",
-    "ParameterValue": "prod"
+    "ParameterValue": "syst"
   },
   {
     "ParameterKey": "GitHubUser",
@@ -45,30 +45,18 @@
   },
   {
     "ParameterKey": "DesiredServiceCapacity",
-    "ParameterValue": "6"
-  },
-  {
-    "ParameterKey": "MinServiceCapacity",
-    "ParameterValue": "6"
+    "ParameterValue": "2"
   },
   {
     "ParameterKey": "MaxServiceCapacity",
-    "ParameterValue": "30"
+    "ParameterValue": "20"
   },
   {
     "ParameterKey": "DesiredCapacity",
-    "ParameterValue": "2"
-  },
-  {
-    "ParameterKey": "MinSize",
-    "ParameterValue": "2"
+    "ParameterValue": "1"
   },
   {
     "ParameterKey": "MaxSize",
     "ParameterValue": "8"
-  },
- {
-    "ParameterKey": "InstanceType",
-    "ParameterValue": "m5.large"
   }
 ]

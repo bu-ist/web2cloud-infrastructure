@@ -12,6 +12,8 @@ Resources:
   Repository:
     Type: AWS::ECR::Repository
     DeletionPolicy: Retain
+#    Properties:
+#      RepositoryName: "${AWS::StackName}-ecr"
 
 #  TemplateBucket:
 #    Type: AWS::S3::Bucket

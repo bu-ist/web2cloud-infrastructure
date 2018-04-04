@@ -20,10 +20,13 @@ Parameters:
   Landscape:
     Type: String
     Default: "test"
-  Tag:
+  RouterImage:
     Type: String
-    Default: "9035b0c7"
+    Default: ""
     #Default: "latest"
+  RouterTag:
+    Type: String
+    Default: "latest"
   DockerImage:
     Type: String
     Default: "bufe-buedu"
@@ -35,20 +38,45 @@ Parameters:
   KeyName:
     Type: AWS::EC2::KeyPair::KeyName
     Description: Name of an existing EC2 KeyPair to enable SSH access to the ECS instances.
+  CPUReservationNGINX:
+    Type: Number
+    Default: '128'
+    Description: CPU slots to reserve for each NGINX container
+  MemoryLimitNGINX:
+    Type: Number
+    Default: '300'
+    Description: Max memory reserved for each NGINX container
+  DesiredServiceCapacity:
+    Type: Number
+    Default: '1'
+    Description: Number of NGINX container to launch in your ECS cluster.
+  MaxServiceCapacity:
+    Type: Number
+    Default: '1'
+    Description: Maximum number of NGINX container to launch in your ECS cluster.
+  MinServiceCapacity:
+    Type: Number
+    Default: '1'
+    Description: Minimum number of NGINX container to launch in your ECS cluster.
   DesiredCapacity:
     Type: Number
     Default: '1'
     Description: Number of instances to launch in your ECS cluster.
-  MaxSize:
+  MinSize:
     Type: Number
     Default: '1'
+    Description: Minimum number of instances that can be launched in your ECS cluster.
+  MaxSize:
+    Type: Number
+    Default: '2'
     Description: Maximum number of instances that can be launched in your ECS cluster.
   InstanceType:
     Description: EC2 instance type
     Type: String
-    Default: t2.micro
+    Default: t2.small
     AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
       m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge, m5.10xlarge,
       c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
       c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
       r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
@@ -70,6 +98,9 @@ Parameters:
     Type: String
     Default: dsmk
 
+Conditions:
+  DoDefaultImageCondition:
+    !Equals [ '' , !Ref 'RouterImage' ]
 
 #Metadata:
 #  AWS::CloudFormation::Interface:
@@ -104,6 +135,7 @@ Resources:
         PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
         KeyName: !Sub "${KeyName}"
         DesiredCapacity: !Sub "${DesiredCapacity}"
+        MinSize: !Sub "${MinSize}"
         MaxSize: !Sub "${MaxSize}"
         InstanceType: !Ref "InstanceType"
 
@@ -112,6 +144,10 @@ Resources:
     Properties:
       TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/service.yaml"
       Parameters:
+        RouterImage: !If
+          - DoDefaultImageCondition
+          - "Fn::ImportValue": !Sub "${Prefix}-container-repository-uri" 
+          - !Ref "RouterImage"
         Prefix: !Sub "${Prefix}"
         Landscape: !Sub "${Landscape}"
         PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
@@ -119,6 +155,11 @@ Resources:
         CloudwatchLogsGroup: !GetAtt [ "EcsStack", "Outputs.CloudwatchLogsGroup" ]
         Port80TargetGroup: !GetAtt [ "EcsStack", "Outputs.Port80TargetGroup" ]
         Port443TargetGroup: !GetAtt [ "EcsStack", "Outputs.Port443TargetGroup" ]
+        DesiredServiceCapacity: !Ref 'DesiredServiceCapacity'
+        MaxServiceCapacity: !Ref 'MaxServiceCapacity'
+        MinServiceCapacity: !Ref 'MinServiceCapacity'
+        CPUReservationNGINX: !Ref 'CPUReservationNGINX'
+        MemoryLimitNGINX: !Ref 'MemoryLimitNGINX'
 
   Pipeline:
     Type: AWS::CloudFormation::Stack
@@ -137,21 +178,18 @@ Resources:
         Port80Service: !GetAtt [ "WebRouterService", "Outputs.Port80Service" ]
         Port443Service: !GetAtt [ "WebRouterService", "Outputs.Port443Service" ]
 
-  CloudFront:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/${Landscape}/cloudfront.yaml"
-      Parameters:
-        Prefix: !Sub "${Prefix}"
-        Landscape: !Sub "${Landscape}"
-        RoutingOriginDNS: !GetAtt [ "EcsStack", "Outputs.WebRouterALBDNS" ]
-        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
+#  CloudFront:
+#    Type: AWS::CloudFormation::Stack
+#    Properties:
+#      TemplateURL: !Sub "${TemplateBucket}/${TemplatePath}/webfe/main/${Landscape}/cloudfront.yaml"
+#      Parameters:
+#        Prefix: !Sub "${Prefix}"
+#        Landscape: !Sub "${Landscape}"
+#        RoutingOriginDNS: !GetAtt [ "EcsStack", "Outputs.WebRouterALBDNS" ]
+#        PublicAlbAcmCertificate: !Sub "${PublicAlbAcmCertificate}"
 
-#Outputs:
-#  ServiceUrl:
-#    Description: The sample service that is being continuously deployed.
-#    Value: !GetAtt LoadBalancer.Outputs.ServiceUrl
-#
-#  PipelineUrl:
-#    Description: The continuous deployment pipeline in the AWS Management Console.
-#    Value: !GetAtt DeploymentPipeline.Outputs.PipelineUrl
+Outputs:
+  WebRouterDNS:
+    Value: !GetAtt [ "EcsStack", "Outputs.WebRouterALBDNS" ]
+    Export:
+      Name: !Sub "${AWS::StackName}-webrouter-dnsname"

@@ -28,6 +28,10 @@ Parameters:
     Type: Number
     Default: '1'
     Description: Number of instances to launch in your ECS cluster.
+  MinSize:
+    Type: Number
+    Default: '1'
+    Description: Minimum number of instances that can be launched in your ECS cluster.
   MaxSize:
     Type: Number
     Default: '3'
@@ -42,6 +46,7 @@ Parameters:
     Default: t2.micro
     AllowedValues: [t2.micro, t2.small, t2.medium, t2.large, m3.medium, m3.large,
       m3.xlarge, m3.2xlarge, m4.large, m4.xlarge, m4.2xlarge, m4.4xlarge, m4.10xlarge,
+      m5.large, m5.xlarge, m5.2xlarge, m5.4xlarge, m5.10xlarge,
       c4.large, c4.xlarge, c4.2xlarge, c4.4xlarge, c4.8xlarge, c3.large, c3.xlarge,
       c3.2xlarge, c3.4xlarge, c3.8xlarge, r3.large, r3.xlarge, r3.2xlarge, r3.4xlarge,
       r3.8xlarge, i2.xlarge, i2.2xlarge, i2.4xlarge, i2.8xlarge]
@@ -86,7 +91,7 @@ Resources:
   WebRouterALB:
     Type: AWS::ElasticLoadBalancingV2::LoadBalancer
     Properties:
-      Name: !Sub "${Landscape}-webrouter"
+      Name: !Sub "${Landscape}-webrouter-alb"
       Scheme: internet-facing
       LoadBalancerAttributes:
       - Key: idle_timeout.timeout_seconds
@@ -151,7 +156,7 @@ Resources:
       HealthCheckProtocol: HTTP
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub "${Landscape}-webrouter-p80"
+      Name: !Sub "${Landscape}-webrouter-p80-tg"
       Port: 80
       Protocol: HTTP
       UnhealthyThresholdCount: 2
@@ -167,7 +172,7 @@ Resources:
       HealthCheckProtocol: HTTPS
       HealthCheckTimeoutSeconds: 5
       HealthyThresholdCount: 2
-      Name: !Sub "${Landscape}-webrouter-p443"
+      Name: !Sub "${Landscape}-webrouter-p443-tg"
       Port: 443
       Protocol: HTTPS
       UnhealthyThresholdCount: 2
@@ -181,7 +186,7 @@ Resources:
         - "Fn::ImportValue": !Sub "${VpcPrefix}-FrontEndSubnet1AID"
         - "Fn::ImportValue": !Sub "${VpcPrefix}-FrontEndSubnet2AID"
       LaunchConfigurationName: !Ref 'ContainerInstances'
-      MinSize: '1'
+      MinSize: !Ref 'MinSize'
       MaxSize: !Ref 'MaxSize'
       DesiredCapacity: !Ref 'DesiredCapacity'
       Tags:
@@ -216,7 +221,7 @@ Resources:
           start amazon-ssm-agent
           /opt/aws/bin/cfn-signal -e $? --stack ${AWS::StackName} --resource ECSAutoScalingGroup --region ${AWS::Region}
 
-  MemoryScaleUpPolicy:
+  CPUScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: PercentChangeInCapacity
@@ -224,7 +229,7 @@ Resources:
       Cooldown: 300
       ScalingAdjustment: 30
 
-  MemoryScaleDownPolicy:
+  CPUScaleDownPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: ChangeInCapacity
@@ -236,39 +241,39 @@ Resources:
         - MetricIntervalUpperBound: 0
           ScalingAdjustment: "-1"
 
-  MemoryReservationAlert:
+  CPUReservationAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmActions: [ !Ref "MemoryScaleUpPolicy" ]
+      AlarmActions: [ !Ref "CPUScaleUpPolicy" ]
       AlarmDescription: "Alarm if CPU too high or metric disappears"
       ComparisonOperator: GreaterThanThreshold
       Dimensions: 
         - Name: ClusterName
           Value: !Ref "ECSCluster"
       EvaluationPeriods: 1
-      MetricName: MemoryReservation
+      MetricName: CPUReservation
       Namespace: AWS/ECS
-      Period: 60
+      Period: 300
       Statistic: Maximum
       Threshold: !Ref "ScaleUpPercent"
       Unit: Percent
 
   # scale down based on https://github.com/nclouds/nclouds_jenkins/blob/master/infrastructure/ecs-cluster.yaml#L172
-  MemoryScaleDownAlert:
+  CPUScaleDownAlert:
     Type: AWS::CloudWatch::Alarm
     Properties:
       ActionsEnabled: true
-      AlarmActions: [ !Ref "MemoryScaleDownPolicy" ]
-      AlarmDescription: "Memory utilization has dropped below scale-in threshold for more than 3 minutes"
+      AlarmActions: [ !Ref "CPUScaleDownPolicy" ]
+      AlarmDescription: "CPU utilization has dropped below scale-in threshold for more than 3 minutes"
       ComparisonOperator: LessThanOrEqualToThreshold
       Dimensions: 
         - Name: ClusterName
           Value: !Ref "ECSCluster"
       EvaluationPeriods: 3
-      MetricName: MemoryReservation
+      MetricName: CPUReservation
       Namespace: AWS/ECS
-      Period: 60
+      Period: 300
       Statistic: Average
       Threshold: !Ref "ScaleDownPercent"
       Unit: Percent

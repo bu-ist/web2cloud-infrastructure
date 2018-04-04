@@ -1,3 +1,73 @@
+## Procedure for building the core infrastructure
+
+
+## Building a Cloudfront virtual host
+
+Once we create a CloudFront distribution we do not want to have to change it if at all posible. To make that 
+possible we are building CloudFront distributions using a completely separate CloudFormation template from 
+the other infrastructure.  This means that the CloudFront distributions will not be nested with another stack
+nor import any values from another stack.  
+
+Right now we are naming the CloudFormation stacks buaws-site-dashedhostname where dashedhostname is the hostname 
+with all dots converted to dashes. For example `www-syst.bu.edu` becomes `www-syst-bu-edu` - this is because 
+CloudFormation stacks are not allowed to have dots in their name.
+
+This does mean that one needs to do the following process to get up a new CloudFront distribution/virtual host:
+
+1. Import the InCommon SSL certificate into acm and record the ARN of the certificate.  This common name in the
+   certificate becomes the Alias in the CloudFormation template.
+
+2. Determine the WebACL value by looking at the WAFWebACL output of the buaws-webrouter-landscape-waf stack.
+
+3. Determine the CloudFront log bucket by looking at the AccessLogBucket parameter of the 
+   buaws-webrouter-landscape-waf stack.  Append `.s3.amazonaws.com` to the value to get the LogBucket parameter
+   of the CloudFront stack.
+
+4. Determine the RoutingOriginDNS entry by looking at the WebRouterDNS output from the buaws-webrouter-main-landscape
+   stack.
+
+5. Build the settings file for this virtual host in cloudfront/settings/stackname-parameters.json.
+
+## How to calculate the memory and CPU size parameters
+
+We are taking advantage of the target-based scaling for ECS to try and simplify this.  Also, we are scaling both ECS
+and EC2 based on CPU values - actual CPU usage for ECS and reserved CPU for the EC2 instances.  Memory is not an 
+issue with NGINX so we don't have to worry about that.  
+
+Based on the results of load testing we might want to switch ECS to ALBRequestCountPerTarget.  That way we could scale
+to keep ~500-600 connections to each NGINX container which is well under the 1024 maximum NGINX is currently set to.  
+This should only be done if load testing shows that this version does not work properly.
+
+
+## Setting up a new landscape
+
+We based our ECS CodeDeploy version on a quick reference.  It used a vanilla Amazon container as part of the service
+definition to get the initial version up.  However, this has the following issue.  If you do an update stack with that
+version it will try to revert to the initial version and the health check for the ALB will fail.  This then causes 
+the stack to say it should rollback to the previous version which also has the initial version.  Eventually this will 
+fail.  
+
+We solve that problem by making the CodePipeline update both the versioned image (tag based on GIT hash) and the "latest"
+tag in the ECR.  Then we make the CloudFormation reference the latest tag in the repo.  This means that 
+CloudFormation service updates will roll back to the latest version in the ECR.  The only negative to this approach is
+creating a new landscape which will need to do something like:
+
+1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile s3bucket landscape
+2. Run the base-landscape stack: ./create-stack awsprofile base-landscape buaws-webrouter-base-prod
+3. Run the iam-landscape stack: ./create-stack awsprofile iam-landscape buaws-webrouter-iam-prod
+4. Do the steps to create the WAF
+5. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
+6. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and 
+   do an update-stack.
+8. Run the main-landscape to build the ECS cluster, webrouter service, and main CodePipeline: ./create-stack awsprofile main-landscape buaws-webrouter-main-prod
+9. Build the CloudFront stacks for your landscape:
+
+Note that the only time you need the bootstrap stack is just after you create the base-landscape stack.  
+You can delete and rebuild the main-landscape stack without issues.
+
+# older stuff 
+
+
 Starting to look into using nested stack sets for some of this.  This means that the CF templates need to
 be stored in an S3 bucket.  This approach uses the approach similar to:
 
@@ -111,3 +181,6 @@ aws --profile webpoc cloudformation validate-template --template-body file:///ho
 VPC: This can be done with the CLI doing something like:
 
 aws --profile webpoc cloudformation create-stack --template-body file://1-vpc.yaml --tags file://non-prod-vpc-tags.json --parameters file://non-prod-vpc-parameters.json --stack-name vpctest
+
+https://github.com/pahud/ecs-cfn-refarch/blob/master/cloudformation/service.yml
+
