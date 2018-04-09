@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "DomainName",
+    "ParameterValue": "neuvm.org"
+  },
+  {
+    "ParameterKey": "WwwRecord",
+    "ParameterValue": "d30kbvjuwa6ft2.cloudfront.net."
+  }
+]
