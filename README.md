@@ -65,6 +65,13 @@ creating a new landscape which will need to do something like:
 Note that the only time you need the bootstrap stack is just after you create the base-landscape stack.  
 You can delete and rebuild the main-landscape stack without issues.
 
+##  Deploying an update
+
+deploy <profile> <TemplateBucket>  <landscape>
+Note:TemplateBucket is only center part.  Example the center part of this: 	"https://s3.amazonaws.com/    buaws-web2cloud-nonprod    -us-east-1"
+Example
+./deploy w2c-non-prod buaws-web2cloud-nonprod test
+
 # older stuff 
 
 
