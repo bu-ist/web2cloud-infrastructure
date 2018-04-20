@@ -23,7 +23,23 @@ Parameters:
    Type: String
    Description: >-
      Set up www.example.net as CNAME for this address
-   Default: stig.github.io
+   Default: ""
+ AcmDnsName:
+   Type: String
+   Description: >-
+     Set up _b0f9c2db.example.bu.edu. as CNAME for this address
+   Default: ""
+ AcmDnsValue:
+   Type: String
+   Description: >-
+     Set up value for the CNAME above for (_a787.acm-validations.aws)
+   Default: ""
+Conditions:
+  WwwRecordCondition:
+    !Not [!Equals [ '', !Ref WwwRecord ] ]
+  AcmDnsNameCondition:
+    !Not [!Equals [ '', !Ref AcmDnsName ] ]
+
 Resources:
  Zone:
    Type: 'AWS::Route53::HostedZone'
@@ -48,6 +64,7 @@ Resources:
  #    TTL: !Ref TTL
  #    ResourceRecords: !Ref ApexRecords
  WwwRecordSet:
+   Condition: WwwRecordCondition
    Type: 'AWS::Route53::RecordSet'
    Properties:
      Name: !Sub "www.${DomainName}."
@@ -56,7 +73,18 @@ Resources:
      TTL: !Ref TTL
      ResourceRecords:
        - !Ref WwwRecord
+ AcmDnsRecordSet:
+   Condition: AcmDnsNameCondition
+   Type: 'AWS::Route53::RecordSet'
+   Properties:
+     Name: !Ref AcmDnsName
+     HostedZoneId: !Ref Zone
+     Type: CNAME
+     TTL: !Ref TTL
+     ResourceRecords:
+       - !Ref AcmDnsValue
  DomainRecordSet:
+   Condition: WwwRecordCondition
    Type: 'AWS::Route53::RecordSet'
    Properties:
      Name: !Sub "${DomainName}."
