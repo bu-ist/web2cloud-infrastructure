@@ -103,7 +103,7 @@ Resources:
         TargetGroupArn: !Ref 'Port443TargetGroup'
       Role: 
         "Fn::ImportValue": !Sub "${Prefix}-container-role"
-      ServiceName: !Sub "port443-${Prefix}-service"
+      # Caused issue CloudFormation updates. ServiceName: !Sub "port443-${Prefix}-service"
       TaskDefinition: !Ref 'taskdefinition'
 
   Port443ServiceScalingTarget:
@@ -151,7 +151,7 @@ Resources:
         TargetGroupArn: !Ref 'Port80TargetGroup'
       Role:
         "Fn::ImportValue": !Sub "${Prefix}-container-role"
-      ServiceName: !Sub "port80-${Prefix}-service"
+      # Caused issue CloudFormation updates. ServiceName: !Sub "port80-${Prefix}-service"
       TaskDefinition: !Ref 'taskdefinition'
 
   Port80ServiceScalingTarget:
