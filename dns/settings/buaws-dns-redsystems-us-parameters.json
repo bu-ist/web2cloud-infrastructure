@@ -1,0 +1,18 @@
+[
+  {
+    "ParameterKey": "DomainName",
+    "ParameterValue": "redsystems.us"
+  },
+  {
+    "ParameterKey": "WwwRecord",
+    "ParameterValue": ""
+  },
+    {
+    "ParameterKey": "AcmDnsName",
+    "ParameterValue": ""
+  },
+  {
+    "ParameterKey": "AcmDnsValue",
+    "ParameterValue": ""
+  }
+]
