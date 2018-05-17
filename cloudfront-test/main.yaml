@@ -13,7 +13,7 @@ Parameters:
   RoutingOriginDNS:
     Type: String
     Description: 'DNS name for the front-end routing ALB'
-    Default: "test-webrouter-306943637.us-east-1.elb.amazonaws.com"
+    Default: "test-webrouter-alb-1210656162.us-east-1.elb.amazonaws.com"
   SSLCertificateArn:
     #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
