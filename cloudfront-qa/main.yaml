@@ -1,0 +1,115 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Parameters:
+  Alias:
+    Type: String
+    Default: ""
+    Description: "Alias of the server which must be unique in CloudFront"
+    AllowedPattern: ^$|^[a-z0-9\-\.]+$
+  WebACL:
+    Type: String
+    Default: "b3e1d8ff-8d2c-4991-8290-0de7f6fe5224"
+    Description: "WebACL to set for this CloudFront landscape distribution found in WAF/output/WAFWebACL"
+    AllowedPattern: ^$|^[0-9a-f\-]+$
+  RoutingOriginDNS:
+    Type: String
+    Description: 'DNS name for the front-end routing ALB for this landscape found in cloudformation/main/outputs/WebRouterDNS'
+    Default: "qa-webrouter-alb-1750298255.us-east-1.elb.amazonaws.com"
+  SSLCertificateArn:
+    #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
+    Type: String
+    Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
+  LogPrefix:
+    #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: 'S3 log bucket for our output'
+    Type: String
+    Default: "cf-logs/"
+  LogBucket:
+    #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: 'S3 log bucket for our output for this landscape found in cloudformation/base/outputs/LogBucketARN'
+    Type: String
+    Default: "buaws-webrouter-base-qa-logbucket-18c7ohvzgrfed.s3.amazonaws.com"
+
+Conditions:
+  AliasSetCondition: !Not
+    - !Equals
+      - !Ref 'Alias'
+      - ''
+  LogBucketSetCondition: !Not
+    - !Equals
+      - !Ref 'LogBucket'
+      - ''
+  WebACLSetCondition: !Not
+    - !Equals
+      - !Ref 'WebACL'
+      - ''
+
+Resources:
+  CloudFrontDistribution:
+    Type: AWS::CloudFront::Distribution
+    Properties:
+      DistributionConfig:
+        Aliases: !If
+          - AliasSetCondition
+          - [ !Ref 'Alias' ]
+          - !Ref "AWS::NoValue"
+        DefaultCacheBehavior:
+          TargetOriginId: router
+          ViewerProtocolPolicy: allow-all
+          AllowedMethods:
+            - DELETE
+            - GET
+            - HEAD
+            - OPTIONS
+            - PATCH
+            - POST
+            - PUT
+          ForwardedValues:
+            QueryString: true
+            Headers:
+              - Host
+              - Referer
+              - User-Agent
+              - X-Upstream
+            Cookies:
+              Forward: all
+        Comment: !Sub "${Alias}"
+        Enabled: true
+        IPV6Enabled: false
+        Logging:
+          Bucket: !If
+            - LogBucketSetCondition
+            - !Ref 'LogBucket'
+            - !Ref 'AWS::NoValue'
+          IncludeCookies: false
+          Prefix: !Ref 'LogPrefix'
+        Origins:
+          - DomainName: !Ref "RoutingOriginDNS"
+            Id: router
+            CustomOriginConfig:
+              HTTPPort: '80'
+              #OriginProtocolPolicy: http-only
+              HTTPSPort: '443'
+              OriginProtocolPolicy: match-viewer
+              OriginSSLProtocols:
+                - TLSv1
+                - TLSv1.1
+                - TLSv1.2
+        PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn: !Ref SSLCertificateArn
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1
+        WebACLId: !If
+          - WebACLSetCondition
+          - !Ref 'WebACL'
+          - !Ref 'AWS::NoValue'
+Outputs:
+  CloudFrontARN:
+    Value: !Ref CloudFrontDistribution
+    Export:
+      Name: !Sub "${AWS::StackName}-buedu-cfn-arn"
+  CloudFrontDNS:
+    Value: !GetAtt "CloudFrontDistribution.DomainName"
+    Export:
+      Name: !Sub "${AWS::StackName}-buedu-cfn-domainname"

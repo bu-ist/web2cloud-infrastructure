@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "Alias",
+    "ParameterValue": "www-buwd.bu.edu"
+  },
+  {
+    "ParameterKey": "SSLCertificateArn",
+    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/c29270d2-d23f-4998-aeab-05f0ea216571"
+  }
+]
