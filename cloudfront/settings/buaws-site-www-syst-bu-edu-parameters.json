@@ -1,18 +1,22 @@
 [
   {
     "ParameterKey": "Alias",
-    "ParameterValue": ""
+    "ParameterValue": "www-syst.bu.edu"
   },
   {
     "ParameterKey": "WebACL",
-    "ParameterValue": ""
+    "ParameterValue": "203fb8d8-2300-4c2f-ba62-68c8a159ac34"
   },
   {
     "ParameterKey": "RoutingOriginDNS",
-    "ParameterValue": "syst-webrouter-152275674.us-east-1.elb.amazonaws.com"
+    "ParameterValue": "syst-webrouter-alb-585814204.us-east-1.elb.amazonaws.com"
   },
   {
     "ParameterKey": "SSLCertificateArn",
     "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/bc063cb0-89fc-4dd8-93ed-703cc15b53bc"
+  },
+  {
+    "ParameterKey": "LogBucket",
+    "ParameterValue": "buaws-webrouter-base-syst-logbucket-7d3thxkupm79.s3.amazonaws.com"
   }
 ]
