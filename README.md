@@ -52,14 +52,20 @@ tag in the ECR.  Then we make the CloudFormation reference the latest tag in the
 CloudFormation service updates will roll back to the latest version in the ECR.  The only negative to this approach is
 creating a new landscape which will need to do something like:
 
-1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile s3bucket landscape
-2. Run the base-landscape stack: ./create-stack awsprofile base-landscape buaws-webrouter-base-prod
-3. Run the iam-landscape stack: ./create-stack awsprofile iam-landscape buaws-webrouter-iam-prod
+1. Create new template settings files. 
+   Create new github branch for new landscape.
+1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile {s3bucket} {landscape}. s3bucket is from the file buaws-webrouter-main-{landscape}-parameters.json
+2. Run the base-landscape stack: ./create-stack.sh awsprofile base-landscape buaws-webrouter-base-{landscape}
+3. Run the iam-landscape stack: ./create-stack.sh awsprofile iam-landscape buaws-webrouter-iam-{landscape} --capabilities C
+APABILITY_IAM  
 4. Do the steps to create the WAF
+	a. Use console Cloudformation create stack
+        b. From s3 https://s3.amazonaws.com/buaws-web2cloud-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
+        c. Name is buaws-webrouter-{landscape}-waf
+        d. CloudFront Access Log Bucket Name from buaws-webrouter-base-{landscape} LogBucketARN (without arn:aws:s3::: part)
+        e. set WAFTriggerAction to count
 5. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
-6. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and 
-   do an update-stack.
-8. Run the main-landscape to build the ECS cluster, webrouter service, and main CodePipeline: ./create-stack awsprofile main-landscape buaws-webrouter-main-prod
+6. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and do an update-stack.
 9. Build the CloudFront stacks for your landscape:
 
 Note that the only time you need the bootstrap stack is just after you create the base-landscape stack.  

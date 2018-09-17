@@ -51,6 +51,10 @@
     "ParameterKey": "DesiredCapacity",
     "ParameterValue": "1"
   },
+  {                                                                                                               
+    "ParameterKey": "RouterImage",                                                                                
+    "ParameterValue": "amazon/amazon-ecs-sample"                                                                  
+  }, 
   {
     "ParameterKey": "MaxSize",
     "ParameterValue": "4"
