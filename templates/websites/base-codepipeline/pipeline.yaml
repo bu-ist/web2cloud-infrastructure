@@ -1,0 +1,151 @@
+# https://dzone.com/articles/automate-codecommit-and-codepipeline-in-aws-cloudf
+#
+Parameters:
+  Prefix:
+    Type: String
+    Default: "web2cloud-test"
+
+  VpcPrefix:
+    Type: String
+    Default: "web2cloud-test"
+
+  Landscape:
+    Type: String
+    Default: "web2cloud-test"
+
+  # go to https://github.com/settings/tokens to generate a value for this entry
+  GitHubToken:
+    Type: String
+
+  GitHubRepo:
+    Type: String
+    Default: docker-bufe-buedu
+
+  GitHubBranch:
+    Type: String
+    Default: master
+
+  GitHubUser:
+    Type: String
+    Default: dsmk
+
+  ECSCluster:
+    Type: String
+
+  Port80Service:
+    Type: String
+
+  Port443Service:
+    Type: String
+
+  PublicAlbAcmCertificate:
+    #AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the WordPress domain name you use below.'
+    Type: String
+    Default: "arn:aws:acm:us-east-1:187621470568:certificate/6504f5c8-0e04-4032-b0a2-b65deefb9b8e"
+
+Resources:
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    Properties:
+      Artifacts:
+        Location: 
+          "Fn::ImportValue": !Sub "${Prefix}-artifact-bucket-arn"
+        Type: "S3"
+      Source:
+        Location: !Join
+          - ""
+          - - "Fn::ImportValue": !Sub "${Prefix}-artifact-bucket-arn"
+            - "/source.zip"
+        Type: "S3"
+      Environment:
+        ComputeType: "BUILD_GENERAL1_SMALL"
+        # Docker version
+        Image: "aws/codebuild/docker:17.09.0"
+        #Image: "aws/codebuild/docker:1.12.1"
+        Type: "LINUX_CONTAINER"
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: LANDSCAPE
+            Value: !Ref Landscape
+          - Name: REPOSITORY_URI
+            Value: 
+              "Fn::ImportValue": !Sub "${Prefix}-container-repository-uri"
+      Name: !Ref AWS::StackName
+      ServiceRole: 
+        "Fn::ImportValue": !Sub "${Prefix}-codebuild-service-role"
+
+  Pipeline:
+    Type: AWS::CodePipeline::Pipeline
+    Properties:
+      RoleArn: 
+        "Fn::ImportValue": !Sub "${Prefix}-codepipeline-service-role-arn"
+      ArtifactStore:
+        Type: S3
+        Location: 
+          "Fn::ImportValue": !Sub "${Prefix}-artifact-bucket-name"
+      Stages:
+        - Name: Source
+          Actions:
+            - Name: App
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              Configuration:
+                Owner: !Ref GitHubUser
+                Repo: !Ref GitHubRepo
+                Branch: !Ref GitHubBranch
+                OAuthToken: !Ref GitHubToken
+              OutputArtifacts:
+                - Name: App
+              RunOrder: 1
+        - Name: Build
+          Actions:
+            - Name: Build
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              Configuration:
+                ProjectName: !Ref CodeBuildProject
+              InputArtifacts:
+                - Name: App
+              OutputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+        - Name: Deploy
+          Actions:
+            - Name: DeployPort80
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: ECS
+              Configuration:
+                ClusterName: !Ref 'ECSCluster'
+                ServiceName: !Ref 'Port80Service'
+                FileName: build.json
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+            - Name: DeployPort443
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: ECS
+              Configuration:
+                ClusterName: !Ref 'ECSCluster'
+                ServiceName: !Ref 'Port443Service'
+                FileName: build.json
+              InputArtifacts:
+                - Name: BuildOutput
+              RunOrder: 1
+
+Outputs:
+  PipelineUrl:
+    Value: !Sub https://console.aws.amazon.com/codepipeline/home?region=${AWS::Region}#/view/${Pipeline}
