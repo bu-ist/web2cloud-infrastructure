@@ -1,0 +1,10 @@
+[
+  {
+    "ParameterKey": "Prefix",
+    "ParameterValue": "buaws-webrouter-dr-syst"
+  },
+  {
+    "ParameterKey": "VpcPrefix",
+    "ParameterValue": "buaws-web2cloud-dr-nonprod"
+  }
+]
