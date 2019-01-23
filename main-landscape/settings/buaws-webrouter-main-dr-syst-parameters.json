@@ -21,11 +21,11 @@
   },
   {
     "ParameterKey": "PublicAlbAcmCertificate",
-    "ParameterValue": "arn:aws:acm:us-east-1:347521306307:certificate/bc063cb0-89fc-4dd8-93ed-703cc15b53bc"
+    "ParameterValue": "arn:aws:acm:us-west-2:347521306307:certificate/5b148529-370a-42dc-b5cd-7488b397e346"
   },
   {
     "ParameterKey": "KeyName",
-    "ParameterValue": "chefdeveloper"
+    "ParameterValue": "web2cloud-nonprod-us-west-2"
   },
   {
     "ParameterKey": "GitHubRepo",
@@ -54,6 +54,10 @@
   {
     "ParameterKey": "DesiredCapacity",
     "ParameterValue": "1"
+  },
+  {
+    "ParameterKey": "RouterImage",
+    "ParameterValue": "amazon/amazon-ecs-sample"
   },
   {
     "ParameterKey": "MaxSize",

@@ -4,7 +4,7 @@
             "ParameterKey": "FrontEndSubnet1ACIDR"
         },
         {
-            "ParameterValue": "chefdeveloper",
+            "ParameterValue": "web2cloud-nonprod-us-west-2",
             "ParameterKey": "KeyPairName"
         },
         {
