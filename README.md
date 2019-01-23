@@ -52,12 +52,18 @@ tag in the ECR.  Then we make the CloudFormation reference the latest tag in the
 CloudFormation service updates will roll back to the latest version in the ECR.  The only negative to this approach is
 creating a new landscape which will need to do something like:
 
+If the VPC has not been createdfor this landscape, this will create it.
+** Run the base-landscape stack: ./create-stack.sh awsprofile region vpc buaws-{vpc-name} --capabilities CAPABILITY_IAM
+      Example: ./create-stack.sh w2c-non-prod us-west-2 vpc buaws-web2cloud-dr-nonprod --capabilities CAPABILITY_IAM
+
 1. Create new template settings files. 
    Create new github branch for new landscape.
 1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile {s3bucket} {landscape}. s3bucket is from the file buaws-webrouter-main-{landscape}-parameters.json
-2. Run the base-landscape stack: ./create-stack.sh awsprofile base-landscape buaws-webrouter-base-{landscape}
-3. Run the iam-landscape stack: ./create-stack.sh awsprofile iam-landscape buaws-webrouter-iam-{landscape} --capabilities C
+2. Run the base-landscape stack: ./create-stack.sh awsprofile region base-landscape buaws-webrouter-base-{landscape}
+      Example: ./create-stack.sh w2c-non-prod us-west-2 base-landscape buaws-webrouter-base-dr-syst
+3. Run the iam-landscape stack: ./create-stack.sh awsprofile region iam-landscape buaws-webrouter-iam-{landscape} --capabilities C
 APABILITY_IAM  
+      Example: ./create-stack.sh w2c-non-prod us-west-2 iam-landscape buaws-webrouter-iam-dr-syst  --capabilities CAPABILITY_IAM
 4. Do the steps to create the WAF
 	a. Use console Cloudformation create stack
         b. From s3 https://s3.amazonaws.com/buaws-web2cloud-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
