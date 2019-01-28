@@ -13,7 +13,7 @@
   },
   {
     "ParameterKey": "TemplateBucket",
-    "ParameterValue": "https://s3.amazonaws.com/buaws-websites-prod-us-west-2"
+    "ParameterValue": "https://s3.amazonaws.com/buaws-web2cloud-nonprod-us-west-2"
   },
   {
     "ParameterKey": "TemplatePath",
@@ -21,11 +21,11 @@
   },
   {
     "ParameterKey": "PublicAlbAcmCertificate",
-    "ParameterValue": "arn:aws:acm:us-west-2:502886588882:certificate/42559eeb-7c2d-40c9-afe3-e0feb12a81e6"
+    "ParameterValue": "arn:aws:acm:us-west-2:347521306307:certificate/5ebf3937-c105-44fc-bad6-9ec04436195a"
   },
   {
     "ParameterKey": "KeyName",
-    "ParameterValue": "buaws-websites-prod-2"
+    "ParameterValue": "web2cloud-nonprod-us-west-2"
   },
   {
     "ParameterKey": "GitHubRepo",

@@ -1,10 +1,10 @@
 [
         {
-            "ParameterValue": "buaws-websites-dr-prod",
+            "ParameterValue": "web2cloud-nonprod-us-west-2",
             "ParameterKey": "KeyPairName"
         },
         {
-            "ParameterValue": "us-west-2c,us-west-2d",
+            "ParameterValue": "us-west-2a,us-west-2b",
             "ParameterKey": "AvailabilityZones"
         },
         {

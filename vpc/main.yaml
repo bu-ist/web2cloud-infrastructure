@@ -306,7 +306,9 @@ Mappings:
     us-east-1:
       AWSNATHVM: ami-25ef665f
     us-gov-west-1:
-      AWSNATHVM: ami-3f0a8f5e
+      AWSNATHVM: ami-2f0a8f5e
+    us-west-2:
+      AWSNATHVM: ami-38469440
 Conditions:
   3AZCondition: !Or 
     - !Equals 
