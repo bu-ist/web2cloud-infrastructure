@@ -7,7 +7,7 @@
 
 Usage () {
   cat <<EOF
-$0 profile directory name [other arguments]
+$0 profile region directory name [other arguments]
 
 This will create a cloudformation stack named "name" which uses the main.yaml CloudFormation template in
 the directory "directory" unless a "name.yaml" exists in that directory.  In addition it will look in the 
