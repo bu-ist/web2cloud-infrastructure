@@ -31,6 +31,8 @@ if [ "$#" -lt 3 ]; then
 fi
 
 profile="$1"
+shift 
+region="$1"
 shift
 directory="$1"
 shift
@@ -68,5 +70,5 @@ else
   echo "# Skipping tags since none were found"
 fi
 
-$debug exec aws --profile "$profile" cloudformation create-stack --stack-name "$name" $ARGS
+$debug exec aws --profile "$profile" --region "$region" cloudformation create-stack --stack-name "$name" $ARGS
 exit

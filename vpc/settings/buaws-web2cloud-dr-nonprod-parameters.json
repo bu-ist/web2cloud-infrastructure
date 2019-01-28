@@ -1,0 +1,58 @@
+[
+        {
+            "ParameterValue": "10.57.254.0/24",
+            "ParameterKey": "FrontEndSubnet1ACIDR"
+        },
+        {
+            "ParameterValue": "web2cloud-nonprod-us-west-2",
+            "ParameterKey": "KeyPairName"
+        },
+        {
+            "ParameterValue": "us-west-2a,us-west-2b",
+            "ParameterKey": "AvailabilityZones"
+        },
+        {
+            "ParameterValue": "2",
+            "ParameterKey": "NumberOfAZs"
+        },
+        {
+            "ParameterValue": "false",
+            "ParameterKey": "CreateVPNConnection"
+        },
+        {
+            "ParameterValue": "false",
+            "ParameterKey": "CreateVPNConnection2"
+        },
+        {
+            "ParameterValue": "false",
+            "ParameterKey": "UseNATGateway"
+        },
+        {
+            "ParameterValue": "default",
+            "ParameterKey": "VPCTenancy"
+        },
+        {
+            "ParameterValue": "t2.small",
+            "ParameterKey": "NATInstanceType"
+        },
+        {
+            "ParameterValue": "10.57.253.0/24",
+            "ParameterKey": "PublicSubnet2CIDR"
+        },
+        {
+            "ParameterValue": "10.57.252.0/22",
+            "ParameterKey": "VPCCIDR"
+        },
+        {
+            "ParameterValue": "10.57.255.0/24",
+            "ParameterKey": "FrontEndSubnet2ACIDR"
+        },
+        {
+            "ParameterValue": "10.57.252.0/24",
+            "ParameterKey": "PublicSubnet1CIDR"
+        },
+        {
+            "ParameterValue": "true",
+            "ParameterKey": "CreateFrontEndSubnets"
+        }
+]
