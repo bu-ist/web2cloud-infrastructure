@@ -84,6 +84,23 @@ Note:TemplateBucket is only center part.  Example the center part of this: 	"htt
 Example
 ./deploy w2c-non-prod buaws-web2cloud-nonprod test
 
+## VPC VPN configuration
+
+The problems with letting AWS automatically calculate the tunnel addresses are two-fold:
+1) Ideally we want repeatability of usage (so rerunning the CloudFormation uses a similar configuration). 
+2) Avoiding the case where the customer gateway has a conflict because the tunnel address was already used by another account.
+
+Really the second issue is the important one for us (the first will be more important when we include the 
+pre-shared key in the CloudFormation).
+
+Anyway, the following AWS documentation talks about the accepted values for the tunnel cidrs:
+
+https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-vpnconnection-vpntunneloptionsspecification.html.
+
+The short answer is that we should use /30 cidrs in the 169.254.0.0/16 range avoiding a bunch of /30s listed in the
+above documentation.
+
+
 # older stuff 
 
 
