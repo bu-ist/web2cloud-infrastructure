@@ -33,7 +33,8 @@
 #
 
 SHIB_NAME=Shibboleth
-SHIB_IDP=https://shib.bu.edu/idp/shibboleth
+#SHIB_IDP=https://shib.bu.edu/idp/shibboleth
+SHIB_IDP=https://shib-test.bu.edu/idp/shibboleth
 
 PROFILE="$1"
 if [ "x$PROFILE" = "x" ]; then
