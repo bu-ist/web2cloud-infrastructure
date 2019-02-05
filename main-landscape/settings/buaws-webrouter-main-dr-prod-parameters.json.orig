@@ -1,0 +1,74 @@
+[
+  {
+    "ParameterKey": "Prefix",
+    "ParameterValue": "buaws-webrouter-dr-prod"
+  },
+  {
+    "ParameterKey": "VpcPrefix",
+    "ParameterValue": "buaws-websites-dr-prod"
+  },
+  {
+    "ParameterKey": "Landscape",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "TemplateBucket",
+    "ParameterValue": "https://s3.amazonaws.com/buaws-web2cloud-nonprod-us-west-2"
+  },
+  {
+    "ParameterKey": "TemplatePath",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "PublicAlbAcmCertificate",
+    "ParameterValue": "arn:aws:acm:us-west-2:347521306307:certificate/5ebf3937-c105-44fc-bad6-9ec04436195a"
+  },
+  {
+    "ParameterKey": "KeyName",
+    "ParameterValue": "web2cloud-nonprod-us-west-2"
+  },
+  {
+    "ParameterKey": "GitHubRepo",
+    "ParameterValue": "web-router-prod"
+  },
+  {
+    "ParameterKey": "GitHubBranch",
+    "ParameterValue": "prod"
+  },
+  {
+    "ParameterKey": "GitHubUser",
+    "ParameterValue": "dsmk"
+  },
+  {
+    "ParameterKey": "GitHubToken",
+    "ParameterValue": "da90c81e9d2ca0ec2b1b541329b877ead80981bd"
+  },
+  {
+    "ParameterKey": "DesiredServiceCapacity",
+    "ParameterValue": "6"
+  },
+  {
+    "ParameterKey": "MinServiceCapacity",
+    "ParameterValue": "6"
+  },
+  {
+    "ParameterKey": "MaxServiceCapacity",
+    "ParameterValue": "30"
+  },
+  {
+    "ParameterKey": "DesiredCapacity",
+    "ParameterValue": "2"
+  },
+  {
+    "ParameterKey": "MinSize",
+    "ParameterValue": "2"
+  },
+  {
+    "ParameterKey": "MaxSize",
+    "ParameterValue": "8"
+  },
+ {
+    "ParameterKey": "InstanceType",
+    "ParameterValue": "m5.large"
+  }
+]
