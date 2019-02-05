@@ -53,6 +53,28 @@ Resources:
           - AliasSetCondition
           - [ !Ref 'Alias' ]
           - !Ref "AWS::NoValue"
+        CacheBehaviors:
+          - PathPattern: /test/basic/*
+            AllowedMethods:
+              - DELETE
+              - GET
+              - HEAD
+              - OPTIONS
+              - PATCH
+              - POST
+              - PUT
+            ForwardedValues:
+              QueryString: true
+              Headers:
+                - Authorization
+                - Host
+                - Referer
+                - User-Agent
+                - X-Upstream
+              Cookies:
+                Forward: all
+            TargetOriginId: router
+            ViewerProtocolPolicy: allow-all
         DefaultCacheBehavior:
           TargetOriginId: router
           ViewerProtocolPolicy: allow-all

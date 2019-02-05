@@ -5,7 +5,7 @@
 
 Usage () {
   cat <<EOF
-$0 profile directory name [other arguments]
+$0 profile region directory name [other arguments]
 
 This will update a cloudformation stack named "name" which uses the main.yaml CloudFormation template in
 the directory "directory" unless a "name.yaml" exists in that directory.  In addition it will look in the 
@@ -24,11 +24,13 @@ if [ "x$1" = "x-d" ]; then
   shift
 fi
 
-if [ "$#" -lt 3 ]; then
+if [ "$#" -lt 4 ]; then
   Usage
 fi
 
 profile="$1"
+shift
+region="$1"
 shift
 directory="$1"
 shift
@@ -66,5 +68,5 @@ else
   echo "# Skipping tags since none were found"
 fi
 
-$debug exec aws --profile "$profile" cloudformation update-stack --stack-name "$name" $ARGS
+$debug exec aws --profile "$profile" --region "$region" cloudformation update-stack --stack-name "$name" $ARGS
 exit

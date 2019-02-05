@@ -149,6 +149,42 @@ Parameters:
       Set to true to create the second VPN connection to an off-site location.  
       If false then we will ignore all parameters for the second customer gateway.
     Type: String
+  VPNTunnelCIDR1a:
+    Type: String
+    Default: "0.0.0.0/00"
+    Description: >-
+      Set to the CIDR range to use for this part of the VPN tunnel.  Instructions on selecting the range can be 
+      found at https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-vpnconnection-vpntunneloptionsspecification.html.
+      Basically /30 cidr in 169.254.0.0/16 skipping the list of choices on the page mentioned above.
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/[0123][0-9]$
+  VPNTunnelCIDR1b:
+    Type: String
+    Default: "0.0.0.0/00"
+    Description: >-
+      Set to the CIDR range to use for this part of the VPN tunnel.  Instructions on selecting the range can be 
+      found at https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-vpnconnection-vpntunneloptionsspecification.html.
+      Basically /30 cidr in 169.254.0.0/16 skipping the list of choices on the page mentioned above.
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/[0123][0-9]$
+  VPNTunnelCIDR2a:
+    Type: String
+    Default: "0.0.0.0/00"
+    Description: >-
+      Set to the CIDR range to use for this part of the VPN tunnel.  Instructions on selecting the range can be 
+      found at https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-vpnconnection-vpntunneloptionsspecification.html.
+      Basically /30 cidr in 169.254.0.0/16 skipping the list of choices on the page mentioned above.
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/[0123][0-9]$
+  VPNTunnelCIDR2b:
+    Type: String
+    Default: "0.0.0.0/00"
+    Description: >-
+      Set to the CIDR range to use for this part of the VPN tunnel.  Instructions on selecting the range can be 
+      found at https://docs.aws.amazon.com/AWSCloudFormation/latest/UserGuide/aws-properties-ec2-vpnconnection-vpntunneloptionsspecification.html.
+      Basically /30 cidr in 169.254.0.0/16 skipping the list of choices on the page mentioned above.
+    AllowedPattern: >-
+      ^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])/[0123][0-9]$
   BGPAsn:
     Description: >-
       Set to the BGP number that the VPN should use.  This is relevant only if
@@ -310,6 +346,18 @@ Mappings:
     us-west-2:
       AWSNATHVM: ami-38469440
 Conditions:
+  VPNTunnelCIDR1ACondition: !Equals
+    - "0.0.0.0/00"
+    - !Ref VPNTunnelCIDR1a
+  VPNTunnelCIDR1BCondition: !Equals
+    - "0.0.0.0/00"
+    - !Ref VPNTunnelCIDR1b
+  VPNTunnelCIDR2ACondition: !Equals
+    - "0.0.0.0/00"
+    - !Ref VPNTunnelCIDR2a
+  VPNTunnelCIDR2BCondition: !Equals
+    - "0.0.0.0/00"
+    - !Ref VPNTunnelCIDR2b
   3AZCondition: !Or 
     - !Equals 
       - !Ref NumberOfAZs
@@ -1026,6 +1074,15 @@ Resources:
       Type: 'ipsec.1'
       CustomerGatewayId: !Ref 'VpcCustomerGateway1'
       VpnGatewayId: !Ref 'VpcVpnGateway'
+      VpnTunnelOptionsSpecifications:
+        - TunnelInsideCidr: !If
+          - VPNTunnelCIDR1ACondition
+          - !Ref 'AWS::NoValue'
+          - !Ref VPNTunnelCIDR1a
+        - TunnelInsideCidr: !If
+          - VPNTunnelCIDR1BCondition
+          - !Ref 'AWS::NoValue'
+          - !Ref VPNTunnelCIDR1b
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-vpn-${CustomerGateway1Suffix}"
@@ -1036,6 +1093,15 @@ Resources:
       Type: 'ipsec.1'
       CustomerGatewayId: !Ref 'VpcCustomerGateway2'
       VpnGatewayId: !Ref 'VpcVpnGateway'
+      VpnTunnelOptionsSpecifications:
+        - TunnelInsideCidr: !If
+          - VPNTunnelCIDR2ACondition
+          - !Ref 'AWS::NoValue'
+          - !Ref VPNTunnelCIDR2a
+        - TunnelInsideCidr: !If
+          - VPNTunnelCIDR2BCondition
+          - !Ref 'AWS::NoValue'
+          - !Ref VPNTunnelCIDR2b
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-vpn-${CustomerGateway2Suffix}"

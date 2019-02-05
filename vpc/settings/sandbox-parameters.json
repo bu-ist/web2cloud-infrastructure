@@ -16,11 +16,27 @@
             "ParameterKey": "NumberOfAZs"
         },
         {
-            "ParameterValue": "false",
+            "ParameterValue": "169.254.45.92/30",
+            "ParameterKey": "VPNTunnelCIDR1a"
+        },
+        {
+            "ParameterValue": "169.254.44.24/30",
+            "ParameterKey": "VPNTunnelCIDR1b"
+        },
+        {
+            "ParameterValue": "169.254.45.0/30",
+            "ParameterKey": "VPNTunnelCIDR2a"
+        },
+        {
+            "ParameterValue": "169.254.44.0/30",
+            "ParameterKey": "VPNTunnelCIDR2b"
+        },
+        {
+            "ParameterValue": "true",
             "ParameterKey": "CreateVPNConnection"
         },
         {
-            "ParameterValue": "false",
+            "ParameterValue": "true",
             "ParameterKey": "CreateVPNConnection2"
         },
         {
