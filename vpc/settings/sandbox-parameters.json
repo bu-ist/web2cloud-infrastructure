@@ -44,6 +44,10 @@
             "ParameterValue": "99111"
         },
         {
+            "ParameterKey": "CustomerGateway1IP",
+            "ParameterValue": "128.197.23.249"
+        },
+        {
             "ParameterValue": "false",
             "ParameterKey": "UseNATGateway"
         },
