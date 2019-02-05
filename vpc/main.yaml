@@ -1074,15 +1074,6 @@ Resources:
       Type: 'ipsec.1'
       CustomerGatewayId: !Ref 'VpcCustomerGateway1'
       VpnGatewayId: !Ref 'VpcVpnGateway'
-      VpnTunnelOptionsSpecifications:
-        - TunnelInsideCidr: !If
-          - VPNTunnelCIDR1ACondition
-          - !Ref 'AWS::NoValue'
-          - !Ref VPNTunnelCIDR1a
-        - TunnelInsideCidr: !If
-          - VPNTunnelCIDR1BCondition
-          - !Ref 'AWS::NoValue'
-          - !Ref VPNTunnelCIDR1b
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-vpn-${CustomerGateway1Suffix}"
@@ -1093,15 +1084,6 @@ Resources:
       Type: 'ipsec.1'
       CustomerGatewayId: !Ref 'VpcCustomerGateway2'
       VpnGatewayId: !Ref 'VpcVpnGateway'
-      VpnTunnelOptionsSpecifications:
-        - TunnelInsideCidr: !If
-          - VPNTunnelCIDR2ACondition
-          - !Ref 'AWS::NoValue'
-          - !Ref VPNTunnelCIDR2a
-        - TunnelInsideCidr: !If
-          - VPNTunnelCIDR2BCondition
-          - !Ref 'AWS::NoValue'
-          - !Ref VPNTunnelCIDR2b
       Tags:
         - Key: Name
           Value: !Sub "${AWS::StackName}-vpn-${CustomerGateway2Suffix}"
