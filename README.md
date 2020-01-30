@@ -54,7 +54,11 @@ creating a new landscape which will need to do something like:
 
 If the VPC has not been createdfor this landscape, this will create it.
 ** Run the base-landscape stack: ./create-stack.sh awsprofile region vpc buaws-{vpc-name} --capabilities CAPABILITY_IAM
-      Example: ./create-stack.sh w2c-non-prod us-west-2 vpc buaws-web2cloud-dr-nonprod --capabilities CAPABILITY_IAM
+      Example:
+
+```bash
+./create-stack.sh default us-west-2 vpc buaws-websites-dr-prod --capabilities CAPABILITY_IAM
+```
 
 1. Create new template settings files. 
    Create new github branch for new landscape.
@@ -63,25 +67,31 @@ for Example: "https://s3.amazonaws.com/buaws-web2cloud-nonprod-us-west-2"   you 
 ```bash
 ./deploy default buaws-web2cloud-nonprod prod
 ```
-2. Run the base-landscape stack: ./create-stack.sh awsprofile region base-landscape buaws-webrouter-base-{landscape}
-      Example: ./create-stack.sh w2c-non-prod us-west-2 base-landscape buaws-webrouter-base-dr-syst
-3. Run the iam-landscape stack: ./create-stack.sh awsprofile region iam-landscape buaws-webrouter-iam-{landscape} --capabilities C
+1. Run the base-landscape stack: ./create-stack.sh awsprofile region base-landscape buaws-webrouter-base-{landscape}
+      Example: 
+      ```bash
+      ./create-stack.sh default us-west-2 base-landscape buaws-webrouter-base-dr-prod
+      ```
+1. Run the iam-landscape stack: ./create-stack.sh awsprofile region iam-landscape buaws-webrouter-iam-{landscape} --capabilities C
 APABILITY_IAM  
-      Example: ./create-stack.sh w2c-non-prod us-west-2 iam-landscape buaws-webrouter-iam-dr-syst  --capabilities CAPABILITY_IAM
-4. Do the steps to create the WAF
+      Example: 
+      ```bash
+      ./create-stack.sh default us-west-2 iam-landscape buaws-webrouter-iam-dr-prod  --capabilities CAPABILITY_IAM
+      ```
+1. Do these steps to create the WAF
 
 	a. Use console Cloudformation create stack
         
-      b. From s3 https://s3.amazonaws.com/buaws-web2cloud-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
+      b. From s3 https://s3.amazonaws.com/buaws-websites-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
         
       c. Name is buaws-webrouter-{landscape}-waf
         
       d. CloudFront Access Log Bucket Name from buaws-webrouter-base-{landscape} LogBucketARN (without arn:aws:s3::: part)
         
       e. set WAFTriggerAction to count
-5. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
-6. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and do an update-stack.
-9. Build the CloudFront stacks for your landscape:
+1. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
+1. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and do an update-stack.
+1. Build the CloudFront stacks for your landscape:
 
 Note that the only time you need the bootstrap stack is just after you create the base-landscape stack.  
 You can delete and rebuild the main-landscape stack without issues.
