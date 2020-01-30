@@ -78,19 +78,62 @@ APABILITY_IAM
       ```bash
       ./create-stack.sh default us-west-2 iam-landscape buaws-webrouter-iam-dr-prod  --capabilities CAPABILITY_IAM
       ```
-1. Do these steps to create the WAF
+1. Do these steps to create the WAF NOTE: not needed for dr testing.
 
 	a. Use console Cloudformation create stack
         
       b. From s3 https://s3.amazonaws.com/buaws-websites-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
         
       c. Name is buaws-webrouter-{landscape}-waf
+      Example `buaws-webrouter-prod-waf`
         
       d. CloudFront Access Log Bucket Name from buaws-webrouter-base-{landscape} LogBucketARN (without arn:aws:s3::: part)
+      Example from `buaws-webrouter-base-prod`  LogBucketARN: `buaws-webrouter-base-prod-logbucket-qbfzl6a67kpv`
         
       e. set WAFTriggerAction to count
+
+      f. Capabilities be sure to acknowledge `I acknowledge that AWS CloudFormation might create IAM resources.`
+
+      g. click through the defaults and create the stack.
+
 1. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
+
+```bash
+#copy the bootstrap file to the main file
+cd main-landscape/settings/
+cp buaws-webrouter-main-dr-prod-parameters.json-bootstrap buaws-webrouter-main-dr-prod-parameters.json
+#now run the creation
+cd ../../
+./create-stack.sh default us-west-2 main-landscape buaws-webrouter-main-dr-prod
+```
+1. Validate CodePipeline: 
+
+      a. Developer Tools > Codepipline > Pipelines in AWS Console.
+
+      b. select the codepipleline in question.  Example: `buaws-webrouter-main-dr-prod-Pipeline-6GHOZXVXZUI8-Pipeline-1JRMI59MW33P9`
+
+      c. If the Source Step failed: 
+      - click the edit button at the top of the page.
+      - Click the edit Stage button under Edit: Source.  
+      - Under App > github click the edit button (pencil and paper icon). 
+      - Click the connect to GitHub button.  
+
+            - repository: bu-ist/webrouter-prod 
+            - branch: prod. 
+            - Click Done. 
+            - Click Save. 
+
+
 1. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and do an update-stack.
+
+```bash
+# copy the orig file to the main parameter file
+cd main-landscape/settings/
+cp buaws-webrouter-main-dr-prod-parameters.json.orig buaws-webrouter-main-dr-prod-parameters.json
+#now update the stack
+cd ../../
+./update-stack.sh default us-west-2 main-landscape buaws-webrouter-main-dr-prod
+```
 1. Build the CloudFront stacks for your landscape:
 
 Note that the only time you need the bootstrap stack is just after you create the base-landscape stack.  
