@@ -39,7 +39,7 @@ to keep ~500-600 connections to each NGINX container which is well under the 102
 This should only be done if load testing shows that this version does not work properly.
 
 
-## Setting up a new landscape
+## Setting up a new landscape or test DR site
 
 We based our ECS CodeDeploy version on a quick reference.  It used a vanilla Amazon container as part of the service
 definition to get the initial version up.  However, this has the following issue.  If you do an update stack with that
@@ -58,18 +58,27 @@ If the VPC has not been createdfor this landscape, this will create it.
 
 1. Create new template settings files. 
    Create new github branch for new landscape.
-1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile {s3bucket} {landscape}. s3bucket is from the file buaws-webrouter-main-{landscape}-parameters.json
+1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile {s3bucket} {landscape}. Where `profile` is default and `s3bucket` and `landscape` is from the file buaws-webrouter-main-{landscape}-parameters.json
+for Example: "https://s3.amazonaws.com/buaws-web2cloud-nonprod-us-west-2"   you would use 
+```bash
+./deploy default buaws-web2cloud-nonprod prod
+```
 2. Run the base-landscape stack: ./create-stack.sh awsprofile region base-landscape buaws-webrouter-base-{landscape}
       Example: ./create-stack.sh w2c-non-prod us-west-2 base-landscape buaws-webrouter-base-dr-syst
 3. Run the iam-landscape stack: ./create-stack.sh awsprofile region iam-landscape buaws-webrouter-iam-{landscape} --capabilities C
 APABILITY_IAM  
       Example: ./create-stack.sh w2c-non-prod us-west-2 iam-landscape buaws-webrouter-iam-dr-syst  --capabilities CAPABILITY_IAM
 4. Do the steps to create the WAF
+
 	a. Use console Cloudformation create stack
-        b. From s3 https://s3.amazonaws.com/buaws-web2cloud-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
-        c. Name is buaws-webrouter-{landscape}-waf
-        d. CloudFront Access Log Bucket Name from buaws-webrouter-base-{landscape} LogBucketARN (without arn:aws:s3::: part)
-        e. set WAFTriggerAction to count
+        
+      b. From s3 https://s3.amazonaws.com/buaws-web2cloud-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
+        
+      c. Name is buaws-webrouter-{landscape}-waf
+        
+      d. CloudFront Access Log Bucket Name from buaws-webrouter-base-{landscape} LogBucketARN (without arn:aws:s3::: part)
+        
+      e. set WAFTriggerAction to count
 5. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
 6. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and do an update-stack.
 9. Build the CloudFront stacks for your landscape:

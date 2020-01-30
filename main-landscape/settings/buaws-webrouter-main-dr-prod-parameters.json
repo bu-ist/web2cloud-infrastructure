@@ -45,11 +45,11 @@
   },
   {
     "ParameterKey": "DesiredServiceCapacity",
-    "ParameterValue": "6"
+    "ParameterValue": "4"
   },
   {
     "ParameterKey": "MinServiceCapacity",
-    "ParameterValue": "6"
+    "ParameterValue": "4"
   },
   {
     "ParameterKey": "MaxServiceCapacity",
@@ -66,6 +66,10 @@
   {
     "ParameterKey": "MaxSize",
     "ParameterValue": "8"
+  },
+  {
+    "ParameterKey": "RouterImage",
+    "ParameterValue": "amazon/amazon-ecs-sample"
   },
  {
     "ParameterKey": "InstanceType",
