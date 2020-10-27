@@ -13,6 +13,10 @@ Parameters:
       This prefix is used to link the project stuff to the VPC that it lives in.  It is used as part of the 
       export and import values from other stacks.  
     Type: String
+  DockerCredentialsName:
+    Description: "Name for the DockerHub secret in SecretsManager"
+    Type: String
+    Default: "websites-webrouter-dockerhub-secret"
 Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
@@ -196,6 +200,12 @@ Resources:
                   - ecr:InitiateLayerUpload
                   - ecr:UploadLayerPart
                   - ecr:CompleteLayerUpload
+              - Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:${DockerCredentialsName}*"
+                Effect: Allow
+                Action:
+                  - kms:Decrypt
+                  - secretsmanager:GetSecretValue
+
 
   CodePipelineServiceRole:
     Type: AWS::IAM::Role
