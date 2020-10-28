@@ -2,7 +2,7 @@
 #
 # Shell script to set up Shibboleth for AWS account.
 #
-# By default it does the production shibboleth (shib.bu.edu)
+# Select TEST or PROD Shib at SHIB_IDP variable below.
 #
 # Shibboleth-rolename
 # 
@@ -13,7 +13,7 @@
 # The other end of the authentication process uses special eduPersonEntitlements which the 
 # Shibboleth IdP maps to the above entrys.
 #
-# So the eduPersonEntitlement http://iam.bu.edu/spfilter-amazon-187621470568-powerUserAccess
+# So the eduPersonEntitlement http://iam.bu.edu/sp/amazon-187621470568-powerUserAccess
 # will be mapped to the following ARN values:
 #
 # arn:aws:iam::187621470568:saml-provider/Shibboleth (for logging in)
