@@ -16,7 +16,7 @@ Parameters:
   DockerCredentialsName:
     Description: "Name for the DockerHub secret in SecretsManager"
     Type: String
-    Default: "websites-webrouter-dockerhub-secret"
+    Default: "websites-webrouter/dockerhub-credentials"
 Resources:
   ALBSecurityGroup:
     Type: AWS::EC2::SecurityGroup
