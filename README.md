@@ -39,7 +39,7 @@ to keep ~500-600 connections to each NGINX container which is well under the 102
 This should only be done if load testing shows that this version does not work properly.
 
 
-## Setting up a new landscape
+## Setting up a new landscape or test DR site
 
 We based our ECS CodeDeploy version on a quick reference.  It used a vanilla Amazon container as part of the service
 definition to get the initial version up.  However, this has the following issue.  If you do an update stack with that
@@ -54,25 +54,87 @@ creating a new landscape which will need to do something like:
 
 If the VPC has not been createdfor this landscape, this will create it.
 ** Run the base-landscape stack: ./create-stack.sh awsprofile region vpc buaws-{vpc-name} --capabilities CAPABILITY_IAM
-      Example: ./create-stack.sh w2c-non-prod us-west-2 vpc buaws-web2cloud-dr-nonprod --capabilities CAPABILITY_IAM
+      Example:
+
+```bash
+./create-stack.sh default us-west-2 vpc buaws-websites-dr-prod --capabilities CAPABILITY_IAM
+```
 
 1. Create new template settings files. 
    Create new github branch for new landscape.
-1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile {s3bucket} {landscape}. s3bucket is from the file buaws-webrouter-main-{landscape}-parameters.json
-2. Run the base-landscape stack: ./create-stack.sh awsprofile region base-landscape buaws-webrouter-base-{landscape}
-      Example: ./create-stack.sh w2c-non-prod us-west-2 base-landscape buaws-webrouter-base-dr-syst
-3. Run the iam-landscape stack: ./create-stack.sh awsprofile region iam-landscape buaws-webrouter-iam-{landscape} --capabilities C
+1. Send the template directory to the S3 bucket for usage: ./deploy awsprofile {s3bucket} {landscape}. Where `profile` is default and `s3bucket` and `landscape` is from the file buaws-webrouter-main-{landscape}-parameters.json
+for Example: "https://s3.amazonaws.com/buaws-web2cloud-nonprod-us-west-2"   you would use 
+```bash
+./deploy default buaws-web2cloud-nonprod prod
+```
+1. Run the base-landscape stack: ./create-stack.sh awsprofile region base-landscape buaws-webrouter-base-{landscape}
+      Example: 
+      ```bash
+      ./create-stack.sh default us-west-2 base-landscape buaws-webrouter-base-dr-prod
+      ```
+1. Run the iam-landscape stack: ./create-stack.sh awsprofile region iam-landscape buaws-webrouter-iam-{landscape} --capabilities C
 APABILITY_IAM  
-      Example: ./create-stack.sh w2c-non-prod us-west-2 iam-landscape buaws-webrouter-iam-dr-syst  --capabilities CAPABILITY_IAM
-4. Do the steps to create the WAF
+      Example: 
+      ```bash
+      ./create-stack.sh default us-west-2 iam-landscape buaws-webrouter-iam-dr-prod  --capabilities CAPABILITY_IAM
+      ```
+1. Do these steps to create the WAF NOTE: not needed for dr testing.
+
 	a. Use console Cloudformation create stack
-        b. From s3 https://s3.amazonaws.com/buaws-web2cloud-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
-        c. Name is buaws-webrouter-{landscape}-waf
-        d. CloudFront Access Log Bucket Name from buaws-webrouter-base-{landscape} LogBucketARN (without arn:aws:s3::: part)
-        e. set WAFTriggerAction to count
-5. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
-6. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and do an update-stack.
-9. Build the CloudFront stacks for your landscape:
+        
+      b. From s3 https://s3.amazonaws.com/buaws-websites-{prod or nonprod}-us-east-1/aws-waf-security-automations/aws-waf-security-automations.template
+        
+      c. Name is buaws-webrouter-{landscape}-waf
+      Example `buaws-webrouter-prod-waf`
+        
+      d. CloudFront Access Log Bucket Name from buaws-webrouter-base-{landscape} LogBucketARN (without arn:aws:s3::: part)
+      Example from `buaws-webrouter-base-prod`  LogBucketARN: `buaws-webrouter-base-prod-logbucket-qbfzl6a67kpv`
+        
+      e. set WAFTriggerAction to count
+
+      f. Capabilities be sure to acknowledge `I acknowledge that AWS CloudFormation might create IAM resources.`
+
+      g. click through the defaults and create the stack.
+
+1. Do an initial run of the main-landscape stack with the bootstrap image (see settings/buaws-webrouter-main-prod-parameters.json-bootstrap) for an example).
+
+```bash
+#copy the bootstrap file to the main file
+cd main-landscape/settings/
+cp buaws-webrouter-main-dr-prod-parameters.json-bootstrap buaws-webrouter-main-dr-prod-parameters.json
+#now run the creation
+cd ../../
+./create-stack.sh default us-west-2 main-landscape buaws-webrouter-main-dr-prod
+```
+1. Validate CodePipeline: 
+
+      a. Developer Tools > Codepipline > Pipelines in AWS Console.
+
+      b. select the codepipleline in question.  Example: `buaws-webrouter-main-dr-prod-Pipeline-6GHOZXVXZUI8-Pipeline-1JRMI59MW33P9`
+
+      c. If the Source Step failed: 
+      - click the edit button at the top of the page.
+      - Click the edit Stage button under Edit: Source.  
+      - Under App > github click the edit button (pencil and paper icon). 
+      - Click the connect to GitHub button.  
+
+            - repository: bu-ist/webrouter-prod 
+            - branch: prod. 
+            - Click Done. 
+            - Click Save. 
+
+
+1. Once that completes and the CodePipeline has run once successfully, Switch the stack back to the normal settings (default:latest) and do an update-stack.
+
+```bash
+# copy the orig file to the main parameter file
+cd main-landscape/settings/
+cp buaws-webrouter-main-dr-prod-parameters.json.orig buaws-webrouter-main-dr-prod-parameters.json
+#now update the stack
+cd ../../
+./update-stack.sh default us-west-2 main-landscape buaws-webrouter-main-dr-prod
+```
+1. Build the CloudFront stacks for your landscape:
 
 Note that the only time you need the bootstrap stack is just after you create the base-landscape stack.  
 You can delete and rebuild the main-landscape stack without issues.
