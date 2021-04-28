@@ -9,7 +9,7 @@
   },
   {
     "ParameterKey": "RoutingOriginDNS",
-    "ParameterValue": "syst-webrouter-alb-585814204.us-east-1.elb.amazonaws.com"
+    "ParameterValue": "buaws-webrouter-syst-alb-879118417.us-east-1.elb.amazonaws.com"
   },
   {
     "ParameterKey": "SSLCertificateArn",
